@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from modules.attention import Attn
+from torch.nn import functional
 
 class AttnDecoderRNN(nn.Module):
     def __init__(self, attn_model, embed_size, hidden_size, output_size, n_layers=1, dropout_p=0.1):

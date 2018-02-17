@@ -3,7 +3,7 @@ from torch import nn
 from torch.autograd import Variable
 from torch.nn import functional as F
 
-from ..encoder import USE_CUDA
+from cfg import USE_CUDA
 
 class Attn(nn.Module):
     def __init__(self, method, hidden_size, max_length=31):

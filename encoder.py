@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 from torch.utils.data import Dataset, DataLoader
 
-USE_CUDA = False
+from cfg import USE_CUDA
 
 
 class EncoderRNN(nn.Module):
@@ -39,17 +39,19 @@ class EncoderRNN(nn.Module):
 
     def init_hidden(self):
         hidden = Variable(torch.zeros(self.n_layers, 1, self.hidden_size))
-        if USE_CUDA: hidden = hidden.cuda()
+        if USE_CUDA:
+            hidden = hidden.cuda()
         return hidden
 
 
-encoder_test = EncoderRNN(
-    input_size=31, hidden_size=10, n_layers=1)
-print(encoder_test)
+if __name__ == '__main__':
+    encoder_test = EncoderRNN(
+        input_size=31, hidden_size=10, n_layers=1)
+    print(encoder_test)
 
-encoder_hidden = encoder_test.init_hidden().cpu()
-word_input = Variable(torch.LongTensor([1, 2, 3]).view(1, -1))  # (N, length) where N is mini-batch size
-# if USE_CUDA:
-#     encoder_test.cuda()
-#     word_input = word_input.cuda()
-encoder_outputs, encoder_hidden = encoder_test(word_input, encoder_hidden)
+    encoder_hidden = encoder_test.init_hidden().cpu()
+    word_input = Variable(torch.LongTensor([1, 2, 3]).view(1, -1))  # (N, length) where N is mini-batch size
+    # if USE_CUDA:
+    #     encoder_test.cuda()
+    #     word_input = word_input.cuda()
+    encoder_outputs, encoder_hidden = encoder_test(word_input, encoder_hidden)

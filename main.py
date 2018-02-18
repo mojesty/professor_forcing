@@ -1,9 +1,12 @@
 import time
+
+import torch
 from torch import optim, nn
 from torch.autograd import Variable
 from torch.utils.data.dataloader import DataLoader
 
 from cfg import USE_CUDA
+import cfg
 from dataset import QADataset
 from decoder import AttnDecoderRNN
 from encoder import EncoderRNN
@@ -12,25 +15,31 @@ from trainer import Trainer
 import torchtext
 
 from utils import time_since
+from tensorboardX import SummaryWriter
+import pickle
 
 vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
-
-import pickle
 final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_final_data.pickle', 'rb'))
-
 qadataset = QADataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
-
 qaloader = DataLoader(qadataset, batch_size=1, shuffle=False)
+
+writer = SummaryWriter(log_dir='logs')
 
 # TODO: organize config
 attn_model = 'general'
-hidden_size = 500
-n_layers = 2
+hidden_size = 300
+n_layers = 1
 dropout_p = 0.1
 
-# Initialize models
-encoder = EncoderRNN(20000, hidden_size, n_layers)
-decoder = AttnDecoderRNN(attn_model, hidden_size, 20000, n_layers, dropout_p=dropout_p)
+# Initialize models (or load them from disk)
+if cfg.NEED_LOAD:
+    encoder = torch.load(cfg.ENC_DUMP_PATH)
+    decoder = torch.load(cfg.DEC_DUMP_PATH)
+    print('Successfully loaded from disk')
+else:
+    encoder = EncoderRNN(20000, hidden_size, n_layers)
+    decoder = AttnDecoderRNN(attn_model, hidden_size, 20000, n_layers, dropout_p=dropout_p)
+    print('Initialized new models')
 
 # Move models to GPU
 if USE_CUDA:
@@ -46,24 +55,24 @@ criterion = nn.NLLLoss()
 
 
 # Configuring training
-n_epochs = 1
+n_epochs = 60
 plot_every = 200
-print_every = 10
+print_every = 5
 
 # Begin!
 trainer = Trainer()
 
 
-def main():
+def main(n_instances=None):
     # Keep track of time elapsed and running averages
     start = time.time()
-    plot_losses = []
+    losses = []
     print_loss_total = 0  # Reset every print_every
     plot_loss_total = 0  # Reset every plot_every
 
     for epoch in range(1, n_epochs + 1):
         for idx, batch in enumerate(qaloader):
-            print(idx)
+            # print(idx)
             # Get training data for this cycle
             training_pair = batch
             input_variable = Variable(training_pair[0])  # 1 x len(training_pair[0])
@@ -79,6 +88,12 @@ def main():
                 decoder_optimizer,
                 criterion
             )
+            losses.append(loss)
+            writer.add_scalar(
+                'logs/test_loss',
+                loss,
+                epoch * (len(qadataset) if n_instances is None else n_instances) + idx
+            )
 
             # Keep track of loss
             print_loss_total += loss
@@ -90,16 +105,22 @@ def main():
                 print_loss_avg = print_loss_total / print_every
                 print_loss_total = 0
                 print_summary = '%s (%d %d%%) %.4f' % (
-                time_since(start, epoch / n_epochs), epoch, epoch / n_epochs * 100, print_loss_avg)
+                    time_since(start, epoch / n_epochs), epoch, epoch / n_epochs * 100, print_loss_avg
+                )
                 print(print_summary)
 
-            if idx % plot_every == 0:
-                plot_loss_avg = plot_loss_total / plot_every
-                plot_losses.append(plot_loss_avg)
-                plot_loss_total = 0
+            if n_instances is not None:
+                if idx > n_instances:
+                    break
 
-            if idx > 50:
-                break
+    with open('losses.txt', 'w') as f:
+        f.write(','.join([str(i) for i in losses]))
+        f.close()
+
+    # saving the model after each epoch for simplicity
+    torch.save(encoder, cfg.ENC_DUMP_PATH)
+    torch.save(decoder, cfg.DEC_DUMP_PATH)
+    writer.close()
 
 if __name__ == '__main__':
-    main()
+    main(n_instances=10)

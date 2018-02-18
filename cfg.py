@@ -1,4 +1,4 @@
-USE_CUDA = False
+USE_CUDA = True
 
 teacher_forcing_ratio = 0.5
 clip = 5.0

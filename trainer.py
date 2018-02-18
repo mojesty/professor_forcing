@@ -8,14 +8,18 @@ from cfg import USE_CUDA, teacher_forcing_ratio, MAX_LENGTH, EOS_TOKEN_IDX, SOS_
 class Trainer:
     def train(self, input_variable, target_variable, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion,
               max_length=MAX_LENGTH):
+
+        # input_variable = input_variable.view(-1)
+        target_variable = target_variable.view(-1)
+
         # Zero gradients of both optimizers
         encoder_optimizer.zero_grad()
         decoder_optimizer.zero_grad()
         loss = 0  # Added onto for each word
 
         # Get size of input and target sentences
-        input_length = input_variable.size()[0]
-        target_length = target_variable.size()[0]
+        input_length = input_variable.size(1)
+        target_length = target_variable.size(0)
 
         # Run words through encoder
         encoder_hidden = encoder.init_hidden()
@@ -35,9 +39,12 @@ class Trainer:
 
             # Teacher forcing: Use the ground-truth target as the next input
             for di in range(target_length):
-                decoder_output, decoder_context, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_context,
-                                                                                             decoder_hidden,
-                                                                                             encoder_outputs)
+                decoder_output, decoder_context, decoder_hidden, decoder_attention = decoder(
+                    decoder_input,
+                    decoder_context,
+                    decoder_hidden,
+                    encoder_outputs
+                )
                 loss += criterion(decoder_output, target_variable[di])
                 decoder_input = target_variable[di]  # Next target is next input
 

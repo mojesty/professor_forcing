@@ -6,3 +6,6 @@ MAX_LENGTH = 30
 
 SOS_TOKEN = 'bos'
 EOS_TOKEN = 'eos'
+UNK_TOKEN = 'unk'
+SOS_TOKEN_IDX = 0
+EOS_TOKEN_IDX = 1

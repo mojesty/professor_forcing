@@ -2,7 +2,7 @@ import random
 
 import torch
 from torch.autograd import Variable
-from cfg import USE_CUDA, teacher_forcing_ratio, MAX_LENGTH, EOS_TOKEN, SOS_TOKEN, clip
+from cfg import USE_CUDA, teacher_forcing_ratio, MAX_LENGTH, EOS_TOKEN_IDX, SOS_TOKEN_IDX, clip
 
 
 class Trainer:
@@ -22,7 +22,7 @@ class Trainer:
         encoder_outputs, encoder_hidden = encoder(input_variable, encoder_hidden)
 
         # Prepare input and output variables
-        decoder_input = Variable(torch.LongTensor([[SOS_TOKEN]]))
+        decoder_input = Variable(torch.LongTensor([[SOS_TOKEN_IDX]]))
         decoder_context = Variable(torch.zeros(1, decoder.hidden_size))
         decoder_hidden = encoder_hidden  # Use last hidden state from encoder to start decoder
         if USE_CUDA:
@@ -38,7 +38,7 @@ class Trainer:
                 decoder_output, decoder_context, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_context,
                                                                                              decoder_hidden,
                                                                                              encoder_outputs)
-                loss += criterion(decoder_output[0], target_variable[di])
+                loss += criterion(decoder_output, target_variable[di])
                 decoder_input = target_variable[di]  # Next target is next input
 
         else:
@@ -47,7 +47,7 @@ class Trainer:
                 decoder_output, decoder_context, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_context,
                                                                                              decoder_hidden,
                                                                                              encoder_outputs)
-                loss += criterion(decoder_output[0], target_variable[di])
+                loss += criterion(decoder_output, target_variable[di])  # decoder_output[0]
 
                 # Get most likely word index (highest value) from output
                 topv, topi = decoder_output.data.topk(1)
@@ -57,7 +57,7 @@ class Trainer:
                 if USE_CUDA: decoder_input = decoder_input.cuda()
 
                 # Stop at end of sentence (not necessary when using known targets)
-                if ni == EOS_TOKEN: break
+                if ni == EOS_TOKEN_IDX: break
 
         # Backpropagation
         loss.backward()

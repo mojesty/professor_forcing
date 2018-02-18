@@ -18,7 +18,7 @@ vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/
 import pickle
 final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_final_data.pickle', 'rb'))
 
-qadataset = QADataset(vocab=vocab, data = final_data)
+qadataset = QADataset(vocab=vocab, data=final_data, gpu=False)
 
 qaloader = DataLoader(qadataset, batch_size=1, shuffle=False)
 

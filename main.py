@@ -55,9 +55,9 @@ criterion = nn.NLLLoss()
 
 
 # Configuring training
-n_epochs = 60
+n_epochs = 3
 plot_every = 200
-print_every = 5
+print_every = 100
 
 # Begin!
 trainer = Trainer()
@@ -88,7 +88,8 @@ def main(n_instances=None):
                 decoder_optimizer,
                 criterion
             )
-            losses.append(loss)
+            if idx % print_every == 0:
+                losses.append(loss)
             writer.add_scalar(
                 'logs/test_loss',
                 loss,
@@ -113,14 +114,15 @@ def main(n_instances=None):
                 if idx > n_instances:
                     break
 
-    with open('losses.txt', 'w') as f:
-        f.write(','.join([str(i) for i in losses]))
-        f.close()
+        with open('losses.txt', 'w') as f:
+            f.write(','.join(['{:5.2}' for i in losses]))
+            f.close()
 
-    # saving the model after each epoch for simplicity
-    torch.save(encoder, cfg.ENC_DUMP_PATH)
-    torch.save(decoder, cfg.DEC_DUMP_PATH)
+        # saving the model after each epoch for simplicity
+        torch.save(encoder, cfg.ENC_DUMP_PATH)
+        torch.save(decoder, cfg.DEC_DUMP_PATH)
+
     writer.close()
 
 if __name__ == '__main__':
-    main(n_instances=10)
+    main()

@@ -40,12 +40,6 @@ class QADataset(Dataset):
             var = var.cuda()
         return var
 
-    #     def __getitem__(self, idx):
-    #         return (
-    #             self.variable_from_sentence(self.data[idx]['context']),
-    #             self.variable_from_sentence(self.data[idx]['question'])
-    #         )
-
     def __getitem__(self, idx):
         return (
             self.indexes_from_sentence(self.data[idx]['context']),

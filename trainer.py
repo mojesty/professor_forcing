@@ -51,7 +51,8 @@ class Trainer:
         else:
             # Without teacher forcing: use network's own prediction as the next input
             for di in range(target_length):
-                decoder_output, decoder_context, decoder_hidden, decoder_attention = decoder(decoder_input, decoder_context,
+                decoder_output, decoder_context, decoder_hidden, decoder_attention = decoder(decoder_input,
+                                                                                             decoder_context,
                                                                                              decoder_hidden,
                                                                                              encoder_outputs)
                 loss += criterion(decoder_output, target_variable[di])  # decoder_output[0]

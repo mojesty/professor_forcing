@@ -2,7 +2,7 @@ import torch
 from torch.utils.data.dataset import Dataset
 from torch.autograd import Variable
 
-from cfg import USE_CUDA, SOS_TOKEN, EOS_TOKEN, UNK_TOKEN
+from cfg import USE_CUDA, SOS_TOKEN, EOS_TOKEN, UNK_TOKEN, EOS_TOKEN_IDX
 
 
 class QADataset(Dataset):
@@ -28,6 +28,8 @@ class QADataset(Dataset):
                 res.append(self.vocab.stoi[word] + 3)
             else:
                 res.append(2)  # (self.vocab.stoi['unk'])
+        # pad sequences for minibatch mode
+        res = res + [EOS_TOKEN_IDX for _ in range(self.max_length - len(res))]
         return torch.cuda.LongTensor(res) if self.gpu else torch.LongTensor(res)
 
     def variable_from_sentence(self, sentence):

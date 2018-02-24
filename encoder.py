@@ -31,14 +31,20 @@ class EncoderRNN(nn.Module):
         self.gru = nn.GRU(hidden_size, hidden_size, n_layers)  # for simplicity
 
     def forward(self, word_inputs, hidden):
+        # word_inputs of shape (batch_size * seq_len)
+        # hidden of shape (seq_len * batch_size * hidden_size)
         seq_len, batch_size = word_inputs.size(1), word_inputs.size(0)
         # embedding layer requires word_input of shape (N, W)
-        embedded = self.embedding(word_inputs).view(seq_len, 1, -1)
+        embedded = self.embedding(word_inputs).view(seq_len, batch_size, -1)
+        # embedded of shape (seq_len * batch_size * hidden_size)
         output, hidden = self.gru(embedded, hidden)
+        # output of shape (seq_len * batch_size * hidden_size)
+        # hidden does not change its shape
         return output, hidden
 
-    def init_hidden(self):
-        hidden = Variable(torch.zeros(self.n_layers, 1, self.hidden_size))
+    def init_hidden(self, batch_size):
+        # TODO: different initialization strategies
+        hidden = Variable(torch.zeros(self.n_layers, batch_size, self.hidden_size))
         if USE_CUDA:
             hidden = hidden.cuda()
         return hidden

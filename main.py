@@ -21,7 +21,7 @@ import pickle
 vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
 final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_final_data.pickle', 'rb'))
 qadataset = QADataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
-qaloader = DataLoader(qadataset, batch_size=1, shuffle=False)
+qaloader = DataLoader(qadataset, batch_size=cfg.batch_size, shuffle=False)
 
 writer = SummaryWriter(log_dir='logs')
 
@@ -118,11 +118,12 @@ def main(n_instances=None):
             f.write(','.join(['{:5.2}' for i in losses]))
             f.close()
 
-        # saving the model after each epoch for simplicity
-        torch.save(encoder, cfg.ENC_DUMP_PATH)
-        torch.save(decoder, cfg.DEC_DUMP_PATH)
+        if cfg.NEED_SAVE:
+            # saving the model after each epoch for simplicity
+            torch.save(encoder, cfg.ENC_DUMP_PATH)
+            torch.save(decoder, cfg.DEC_DUMP_PATH)
 
     writer.close()
 
 if __name__ == '__main__':
-    main()
+    main(n_instances=5)

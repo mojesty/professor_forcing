@@ -44,7 +44,7 @@ def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_L
 
 
     decoded_words = []
-    decoder_attentions = torch.zeros(max_length, max_length + 2)
+    decoder_attentions = torch.zeros(max_length, max_length)
 
     # Run through decoder
     for di in range(max_length):
@@ -61,8 +61,11 @@ def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_L
             decoded_words.append(EOS_TOKEN)
             break
         elif ni == UNK_TOKEN_IDX and fill_unks is not None:
-            top_word, top_word_idx = decoder_attention.data.topk(1)
-            decoded_words.append(qadataset.itos(input_variable.squeeze(0)[top_word_idx.view(-1)].cpu().data[0]))
+            # find the word in input sentence with the highest attention score and add it to the decoded words
+            _, top_word_idx = decoder_attention.data.topk(1)
+            index_to_refer = input_variable.squeeze(0)[top_word_idx.view(-1)].cpu().data[0]
+            decoded_words.append('_' + qadataset.data[dataset_idx]['context'].split(' ')[top_word_idx.cpu().view(-1)[0]])
+
         else:
             decoded_words.append(qadataset.itos(ni))
 
@@ -82,5 +85,5 @@ def main(i):
     print('Generated {}'.format(words))
 
 if __name__ == '__main__':
-    for idx in range(3, 15):
+    for idx in range(3, 5):
         main(idx)

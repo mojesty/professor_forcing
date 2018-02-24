@@ -19,14 +19,12 @@ class QADataset(Dataset):
     def indexes_from_sentence(self, sentence):
         # be careful with it, as it preprocceses
         res = []
-        for i, word in enumerate(sentence.split(' ')):
-            if i > self.max_length:
-                break
+        for i, word in enumerate(sentence.split(' ')[:self.max_length]):
             if word == SOS_TOKEN:
                 res.append(0)
             elif word == EOS_TOKEN:
                 res.append(1)
-            if word in self.vocab.stoi and self.vocab.stoi[word] < 20000 - 3:
+            elif word in self.vocab.stoi and self.vocab.stoi[word] < 20000 - 3:
                 res.append(self.vocab.stoi[word] + 3)
             else:
                 res.append(2)  # (self.vocab.stoi['unk'])

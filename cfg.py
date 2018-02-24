@@ -2,7 +2,7 @@ USE_CUDA = True
 
 teacher_forcing_ratio = 1.0  # autoregressive training off
 clip = 5.0
-batch_size = 128
+batch_size = 512
 
 MAX_LENGTH = 30
 

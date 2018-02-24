@@ -2,7 +2,7 @@ import torch
 from torch.utils.data.dataset import Dataset
 from torch.autograd import Variable
 
-from cfg import USE_CUDA
+from cfg import USE_CUDA, SOS_TOKEN, EOS_TOKEN, UNK_TOKEN
 
 
 class QADataset(Dataset):
@@ -22,9 +22,9 @@ class QADataset(Dataset):
         for i, word in enumerate(sentence.split(' ')):
             if i > self.max_length:
                 break
-            if word == 'bos':
+            if word == SOS_TOKEN:
                 res.append(0)
-            elif word == 'eos':
+            elif word == EOS_TOKEN:
                 res.append(1)
             if word in self.vocab.stoi and self.vocab.stoi[word] < 20000 - 3:
                 res.append(self.vocab.stoi[word] + 3)
@@ -48,3 +48,13 @@ class QADataset(Dataset):
 
     def __len__(self):
         return len(self.data)
+
+    def itos(self, i):
+        if i == 0:
+            return SOS_TOKEN
+        elif i == 1:
+            return EOS_TOKEN
+        elif i == 2:
+            return UNK_TOKEN
+        else:
+            return self.vocab.itos[i - 3]

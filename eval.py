@@ -6,7 +6,7 @@ from torch.utils.data.dataloader import DataLoader
 from torch.autograd import Variable
 
 import cfg
-from cfg import MAX_LENGTH, USE_CUDA, SOS_TOKEN_IDX, EOS_TOKEN_IDX
+from cfg import MAX_LENGTH, USE_CUDA, SOS_TOKEN_IDX, EOS_TOKEN_IDX, EOS_TOKEN
 from dataset import QADataset
 
 vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
@@ -14,7 +14,7 @@ final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_fi
 qadataset = QADataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
 qaloader = DataLoader(qadataset, batch_size=1, shuffle=False)
 
-def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_LENGTH):
+def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_LENGTH, fill_unks=None):
     """
     Runs inference pass
     :param sentence:
@@ -44,7 +44,7 @@ def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_L
 
 
     decoded_words = []
-    decoder_attentions = torch.zeros(max_length, max_length)
+    decoder_attentions = torch.zeros(max_length, max_length + 2)
 
     # Run through decoder
     for di in range(max_length):
@@ -58,10 +58,13 @@ def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_L
         topv, topi = decoder_output.data.topk(1)
         ni = topi[0][0]
         if ni == EOS_TOKEN_IDX:
-            decoded_words.append('<EOS>')
+            decoded_words.append(EOS_TOKEN)
             break
+        elif ni == UNK_TOKEN_IDX and fill_unks is not None:
+            top_word, top_word_idx = decoder_attention.data.topk(1)
+            decoded_words.append(qadataset.itos(top_word.view(-1)))
         else:
-            decoded_words.append(vocab.itos[ni])
+            decoded_words.append(qadataset.itos(ni))
 
         # Next input is chosen word
         decoder_input = Variable(torch.LongTensor([[ni]]))
@@ -69,15 +72,15 @@ def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_L
 
     return decoded_words, decoder_attentions[:di + 1, :len(encoder_outputs)]
 
-def main():
-    i = 0
+def main(i):
     encoder = torch.load(cfg.ENC_DUMP_PATH)
     decoder = torch.load(cfg.DEC_DUMP_PATH)
     print('Successfully loaded from disk')
     print('Sentence  {}'.format(qadataset.data[i]['context']))
     print('Question  {}'.format(qadataset.data[i]['question']))
-    words = evaluate(encoder=encoder, decoder=decoder, dataset_idx=i, max_length=MAX_LENGTH)
+    words, _ = evaluate(encoder=encoder, decoder=decoder, dataset_idx=i, max_length=MAX_LENGTH)
     print('Generated {}'.format(words))
 
 if __name__ == '__main__':
-    main()
+    for idx in range(3, 15):
+        main(idx)

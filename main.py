@@ -5,7 +5,7 @@ from torch import optim, nn
 from torch.autograd import Variable
 from torch.utils.data.dataloader import DataLoader
 
-from cfg import USE_CUDA
+from cfg import USE_CUDA, n_epochs
 import cfg
 from dataset import QADataset
 from decoder import AttnDecoderRNN
@@ -23,7 +23,7 @@ final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_fi
 qadataset = QADataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
 qaloader = DataLoader(qadataset, batch_size=cfg.batch_size, shuffle=False)
 
-writer = SummaryWriter(log_dir='logs')
+writer = SummaryWriter(log_dir=cfg.LOGDIR)
 
 # TODO: organize config
 attn_model = 'general'
@@ -47,15 +47,13 @@ if USE_CUDA:
     decoder.cuda()
 
 # Initialize optimizers and criterion
-learning_rate = 0.0001
+learning_rate = 0.00005
 encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
 decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate)
 criterion = nn.NLLLoss()
 
 
-
 # Configuring training
-n_epochs = 3
 plot_every = 200
 print_every = 100
 
@@ -91,7 +89,7 @@ def main(n_instances=None):
             if idx % print_every == 0:
                 losses.append(loss)
             writer.add_scalar(
-                'logs/test_loss',
+                'logs/300_adam',
                 loss,
                 epoch * (len(qadataset) if n_instances is None else n_instances) + idx
             )
@@ -114,16 +112,16 @@ def main(n_instances=None):
                 if idx > n_instances:
                     break
 
-        with open('losses.txt', 'w') as f:
+        with open(cfg.LOSSDIR, 'w') as f:
             f.write(','.join(['{:5.2}' for i in losses]))
             f.close()
 
         if cfg.NEED_SAVE:
             # saving the model after each epoch for simplicity
-            torch.save(encoder, cfg.ENC_DUMP_PATH)
-            torch.save(decoder, cfg.DEC_DUMP_PATH)
+            torch.save(encoder, cfg.ENC_DUMP_PATH.format(epoch))
+            torch.save(decoder, cfg.DEC_DUMP_PATH.format(epoch))
 
     writer.close()
 
 if __name__ == '__main__':
-    main(n_instances=5)
+    main()

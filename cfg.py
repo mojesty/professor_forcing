@@ -1,8 +1,8 @@
 USE_CUDA = True
 
 teacher_forcing_ratio = 1.0  # autoregressive training off
-clip = 5.0
-batch_size = 512
+clip = 2.0
+batch_size = 1024
 
 MAX_LENGTH = 30
 
@@ -13,9 +13,14 @@ SOS_TOKEN_IDX = 0
 EOS_TOKEN_IDX = 1
 UNK_TOKEN_IDX = 2
 
-NEED_SAVE = False
+NEED_SAVE = True
 NEED_LOAD = False
 
-ENC_DUMP_PATH = 'encoder2.binary'
-DEC_DUMP_PATH = 'decoder2.binary'
+# gonna format them later
+ENC_DUMP_PATH = 'encoder_{}.binary'
+DEC_DUMP_PATH = 'decoder_{}.binary'
+LOGDIR = 'logs'  # for Tensorboard
+
+LOSSDIR = 'losses.txt'  # for our purposes (o rly?)
+n_epochs = 10
 

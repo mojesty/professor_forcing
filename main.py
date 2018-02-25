@@ -1,22 +1,20 @@
+import pickle
 import time
 
 import torch
+import torchtext
+from tensorboardX import SummaryWriter
 from torch import optim, nn
 from torch.autograd import Variable
 from torch.utils.data.dataloader import DataLoader
 
-from cfg import USE_CUDA, n_epochs
 import cfg
+from cfg import USE_CUDA, n_epochs, dropout_p, n_layers, hidden_size, attn_model
 from dataset import QADataset
 from decoder import AttnDecoderRNN
 from encoder import EncoderRNN
 from trainer import Trainer
-
-import torchtext
-
 from utils import time_since
-from tensorboardX import SummaryWriter
-import pickle
 
 vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
 final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_final_data.pickle', 'rb'))
@@ -25,11 +23,6 @@ qaloader = DataLoader(qadataset, batch_size=cfg.batch_size, shuffle=False)
 
 writer = SummaryWriter(log_dir=cfg.LOGDIR)
 
-# TODO: organize config
-attn_model = 'general'
-hidden_size = 300
-n_layers = 1
-dropout_p = 0.1
 
 # Initialize models (or load them from disk)
 if cfg.NEED_LOAD:
@@ -37,8 +30,8 @@ if cfg.NEED_LOAD:
     decoder = torch.load(cfg.DEC_DUMP_PATH)
     print('Successfully loaded from disk')
 else:
-    encoder = EncoderRNN(20000, hidden_size, n_layers)
-    decoder = AttnDecoderRNN(attn_model, hidden_size, 20000, n_layers, dropout_p=dropout_p)
+    encoder = EncoderRNN(cfg.vocab_size, hidden_size, n_layers)
+    decoder = AttnDecoderRNN(attn_model, hidden_size, cfg.vocab_size, n_layers, dropout_p=dropout_p)
     print('Initialized new models')
 
 # Move models to GPU
@@ -55,7 +48,7 @@ criterion = nn.NLLLoss()
 
 # Configuring training
 plot_every = 200
-print_every = 100
+print_every = 10
 
 # Begin!
 trainer = Trainer()

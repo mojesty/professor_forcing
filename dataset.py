@@ -2,7 +2,7 @@ import torch
 from torch.utils.data.dataset import Dataset
 from torch.autograd import Variable
 
-from cfg import USE_CUDA, SOS_TOKEN, EOS_TOKEN, UNK_TOKEN, EOS_TOKEN_IDX
+from cfg import USE_CUDA, SOS_TOKEN, EOS_TOKEN, UNK_TOKEN, EOS_TOKEN_IDX, vocab_size
 
 
 class QADataset(Dataset):
@@ -24,7 +24,7 @@ class QADataset(Dataset):
                 res.append(0)
             elif word == EOS_TOKEN:
                 res.append(1)
-            elif word in self.vocab.stoi and self.vocab.stoi[word] < 20000 - 3:
+            elif word in self.vocab.stoi and self.vocab.stoi[word] < vocab_size - 3:
                 res.append(self.vocab.stoi[word] + 3)
             else:
                 res.append(2)  # (self.vocab.stoi['unk'])

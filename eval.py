@@ -14,7 +14,15 @@ final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_fi
 qadataset = QADataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
 qaloader = DataLoader(qadataset, batch_size=1, shuffle=False)
 
-def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_LENGTH, fill_unks=None):
+def evaluate(
+        encoder,
+        decoder,
+        dataset_idx=None,
+        sentence=None,
+        max_length=MAX_LENGTH,
+        fill_unks=None,
+        sample_mathod='argmax'
+    ):
     """
     Runs inference pass ON A SINGLE SENTENCE ONLY
     :param sentence:
@@ -22,6 +30,7 @@ def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_L
     :return: list of decoded words
     """
     # TODO: batch evaluation!
+    assert sample_mathod in ['argmax', 'multinomial']
     if dataset_idx is not None:
         input_variable = Variable(qadataset[dataset_idx][0].unsqueeze(0))  # 1 x instance_length
     elif sentence is not None:
@@ -49,14 +58,21 @@ def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_L
 
     # Run through decoder
     for di in range(max_length):
-        decoder_output, decoder_context, decoder_hidden, decoder_attention = decoder(decoder_input,
-                                                                                     decoder_context,
-                                                                                     decoder_hidden,
-                                                                                     encoder_outputs)
+        decoder_output, decoder_context, decoder_hidden, decoder_attention = decoder(
+            decoder_input,
+            decoder_context,
+            decoder_hidden,
+            encoder_outputs
+        )
         decoder_attentions[di, :decoder_attention.size(2)] += decoder_attention.squeeze(0).squeeze(0).cpu().data
 
         # Choose top word from output
-        topv, topi = decoder_output.data.topk(1)
+        if sample_mathod == 'argmax':
+            topv, topi = decoder_output.data.topk(1)
+        elif sample_mathod == 'multinomial':
+            # TODO: multi-inference for one sentence
+            topi = torch.multinomial(decoder_output.cpu().exp().data, 1)
+            if USE_CUDA: topi = topi.cuda()
         ni = topi[0][0]
         if ni == EOS_TOKEN_IDX:
             decoded_words.append(EOS_TOKEN)
@@ -76,15 +92,25 @@ def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_L
 
     return decoded_words, decoder_attentions[:di + 1, :len(encoder_outputs)]
 
-def main(i):
-    encoder = torch.load(cfg.ENC_DUMP_PATH)
-    decoder = torch.load(cfg.DEC_DUMP_PATH)
+def main(encoder, decoder, i):
     print('Successfully loaded from disk')
+    print('------------------------------------------------')
     print('Sentence  {}'.format(qadataset.data[i]['context']))
     print('Question  {}'.format(qadataset.data[i]['question']))
-    words, _ = evaluate(encoder=encoder, decoder=decoder, dataset_idx=i, max_length=MAX_LENGTH, fill_unks='attn')
-    print('Generated {}'.format(words))
+    for j in range(3):
+        words, _ = evaluate(
+            encoder=encoder,
+            decoder=decoder,
+            dataset_idx=i,
+            max_length=MAX_LENGTH,
+            fill_unks='attn',
+            sample_mathod='multinomial'
+        )
+        print('Generated {}'.format(' '.join(words)))
 
 if __name__ == '__main__':
+    epoch = 7
+    encoder = torch.load(cfg.ENC_DUMP_PATH.format(epoch))
+    decoder = torch.load(cfg.DEC_DUMP_PATH.format(epoch))
     for idx in range(3, 15):
-        main(idx)
+        main(encoder, decoder, idx)

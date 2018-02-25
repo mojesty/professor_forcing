@@ -16,11 +16,12 @@ qaloader = DataLoader(qadataset, batch_size=1, shuffle=False)
 
 def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_LENGTH, fill_unks=None):
     """
-    Runs inference pass
+    Runs inference pass ON A SINGLE SENTENCE ONLY
     :param sentence:
     :param max_length:
-    :return:
+    :return: list of decoded words
     """
+    # TODO: batch evaluation!
     if dataset_idx is not None:
         input_variable = Variable(qadataset[dataset_idx][0].unsqueeze(0))  # 1 x instance_length
     elif sentence is not None:
@@ -30,7 +31,7 @@ def evaluate(encoder, decoder, dataset_idx=None, sentence=None, max_length=MAX_L
         raise ValueError('Either dataset idx from 0 to {} or sentence should be specified'.format(len(qadataset)))
 
     # Run through encoder
-    encoder_hidden = encoder.init_hidden()
+    encoder_hidden = encoder.init_hidden(batch_size=1)
     encoder_outputs, encoder_hidden = encoder(input_variable, encoder_hidden)
 
     # Create starting vectors for decoder
@@ -85,5 +86,5 @@ def main(i):
     print('Generated {}'.format(words))
 
 if __name__ == '__main__':
-    for idx in range(3, 5):
+    for idx in range(3, 15):
         main(idx)

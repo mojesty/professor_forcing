@@ -17,8 +17,8 @@ NEED_SAVE = True
 NEED_LOAD = False
 
 # gonna format them later
-ENC_DUMP_PATH = 'encoder_{}.binary'
-DEC_DUMP_PATH = 'decoder_{}.binary'
+ENC_DUMP_PATH = 'encoder_10.binary'
+DEC_DUMP_PATH = 'decoder_10.binary'
 LOGDIR = 'logs'  # for Tensorboard
 
 LOSSDIR = 'losses.txt'  # for our purposes (o rly?)

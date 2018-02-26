@@ -3,7 +3,7 @@ USE_CUDA = True
 
 teacher_forcing_ratio = 1.0  # autoregressive training off
 clip = 2.0
-batch_size = 256
+batch_size = 512
 
 MAX_LENGTH = 30
 
@@ -18,8 +18,8 @@ NEED_SAVE = True
 NEED_LOAD = False
 
 # gonna format them later
-ENC_DUMP_PATH = 'encoder_{}_bs128_vocab40k.binary'
-DEC_DUMP_PATH = 'decoder_{}_bs128_vocab40k.binary'
+ENC_DUMP_PATH = 'models/encoder_{}_bs128_vocab40k.binary'
+DEC_DUMP_PATH = 'models/decoder_{}_bs128_vocab40k.binary'
 LOGDIR = 'logs'  # for Tensorboard
 
 LOSSDIR = 'losses.txt'  # for our purposes (o rly?)

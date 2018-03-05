@@ -11,8 +11,8 @@ from torch.utils.data.dataloader import DataLoader
 import cfg
 from cfg import USE_CUDA, n_epochs, dropout_p, n_layers, hidden_size, attn_model
 from dataset import QADataset
-from decoder import AttnDecoderRNN
-from encoder import EncoderRNN
+from modules.decoder import AttnDecoderRNN
+from modules.encoder import EncoderRNN
 from trainer import Trainer
 from utils import time_since
 

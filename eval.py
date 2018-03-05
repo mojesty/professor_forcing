@@ -1,3 +1,5 @@
+from numpy import random
+
 import torch
 import torchtext
 import pickle
@@ -6,7 +8,7 @@ from torch.utils.data.dataloader import DataLoader
 from torch.autograd import Variable
 
 import cfg
-from cfg import MAX_LENGTH, USE_CUDA, SOS_TOKEN_IDX, EOS_TOKEN_IDX, EOS_TOKEN, UNK_TOKEN_IDX
+from cfg import MAX_LENGTH, USE_CUDA, sos_idx, eos_idx, eos, unk_idx
 from dataset import QADataset
 
 vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
@@ -44,7 +46,7 @@ def evaluate(
     encoder_outputs, encoder_hidden = encoder(input_variable, encoder_hidden)
 
     # Create starting vectors for decoder
-    decoder_input = Variable(torch.LongTensor([[SOS_TOKEN_IDX]]))  # SOS
+    decoder_input = Variable(torch.LongTensor([[sos_idx]]))  # SOS
     decoder_context = Variable(torch.zeros(1, decoder.hidden_size))
     decoder_hidden = encoder_hidden
 
@@ -67,24 +69,6 @@ def evaluate(
         decoder_attentions[di, :decoder_attention.size(2)] += decoder_attention.squeeze(0).squeeze(0).cpu().data
 
         # Choose top word from output
-        if sample_mathod == 'argmax':
-            topv, topi = decoder_output.data.topk(1)
-        elif sample_mathod == 'multinomial':
-            # TODO: multi-inference for one sentence
-            topi = torch.multinomial(decoder_output.cpu().exp().data, 1)
-            if USE_CUDA: topi = topi.cuda()
-        ni = topi[0][0]
-        if ni == EOS_TOKEN_IDX:
-            decoded_words.append(EOS_TOKEN)
-            break
-        elif ni == UNK_TOKEN_IDX and fill_unks is not None:
-            # find the word in input sentence with the highest attention score and add it to the decoded words
-            _, top_word_idx = decoder_attention.data.topk(1)
-            index_to_refer = input_variable.squeeze(0)[top_word_idx.view(-1)].cpu().data[0]
-            decoded_words.append('_' + qadataset.data[dataset_idx]['context'].split(' ')[top_word_idx.cpu().view(-1)[0]])
-
-        else:
-            decoded_words.append(qadataset.itos(ni))
 
         # Next input is chosen word
         decoder_input = Variable(torch.LongTensor([[ni]]))
@@ -93,11 +77,10 @@ def evaluate(
     return decoded_words, decoder_attentions[:di + 1, :len(encoder_outputs)]
 
 def main(encoder, decoder, i):
-    print('Successfully loaded from disk')
     print('------------------------------------------------')
     print('Sentence  {}'.format(qadataset.data[i]['context']))
     print('Question  {}'.format(qadataset.data[i]['question']))
-    for j in range(3):
+    for j in range(5):
         words, _ = evaluate(
             encoder=encoder,
             decoder=decoder,
@@ -110,7 +93,9 @@ def main(encoder, decoder, i):
 
 if __name__ == '__main__':
     epoch = 7
+    print('Successfully loaded from disk')
     encoder = torch.load(cfg.ENC_DUMP_PATH.format(epoch))
     decoder = torch.load(cfg.DEC_DUMP_PATH.format(epoch))
-    for idx in range(3, 15):
+    for idx in range(15):
+        idx = random.randint(0, len(qadataset))
         main(encoder, decoder, idx)

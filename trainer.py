@@ -2,7 +2,7 @@ import random
 
 import torch
 from torch.autograd import Variable
-from cfg import USE_CUDA, teacher_forcing_ratio, MAX_LENGTH, EOS_TOKEN_IDX, SOS_TOKEN_IDX, clip
+from cfg import USE_CUDA, teacher_forcing_ratio, MAX_LENGTH, eos_idx, sos_idx, clip
 
 
 class Trainer:
@@ -25,7 +25,7 @@ class Trainer:
         encoder_outputs, encoder_hidden = encoder(input_variable, encoder_hidden)
 
         # input of shape batch_size * 1
-        decoder_input = Variable(torch.LongTensor([SOS_TOKEN_IDX]).repeat(1, batch_size)).t()
+        decoder_input = Variable(torch.LongTensor([sos_idx]).repeat(1, batch_size)).t()
         # context of shape batch_size * hidden_size
         decoder_context = Variable(torch.zeros(batch_size, decoder.hidden_size))
         # Use last hidden state from encoder to start decoder
@@ -69,7 +69,7 @@ class Trainer:
                 if USE_CUDA: decoder_input = decoder_input.cuda()
 
                 # Stop at end of sentence (not necessary when using known targets)
-                if ni == EOS_TOKEN_IDX: break
+                if ni == eos_idx: break
 
         # Backpropagation
         loss.backward()

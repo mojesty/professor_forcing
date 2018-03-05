@@ -1,9 +1,9 @@
 import torch
 from torch.autograd import Variable
-from decoder import AttnDecoderRNN
-from encoder import EncoderRNN
 
 from cfg import USE_CUDA
+from modules.decoder import AttnDecoderRNN
+from modules.encoder import EncoderRNN
 
 # ------------------------- ENCODER ----------------------
 encoder_test = EncoderRNN(10, 10, 2)

@@ -11,6 +11,7 @@ from torch.utils.data.dataloader import DataLoader
 import cfg
 from cfg import USE_CUDA, n_epochs, dropout_p, n_layers, hidden_size, attn_model
 from dataset import QADataset
+from model import Translator
 from modules.decoder import AttnDecoderRNN
 from modules.encoder import EncoderRNN
 from trainer import Trainer
@@ -39,10 +40,17 @@ if USE_CUDA:
     encoder.cuda()
     decoder.cuda()
 
+# TODO: too hard
+model = Translator(1, 1, 1, .1, 'general')
+del model.encoder
+del model.decoder
+model.encoder = encoder
+model.decoder = decoder
+
 # Initialize optimizers and criterion
 learning_rate = 0.00005
-encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
-decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate)
+encoder_optimizer = optim.Adam(model.encoder.parameters(), lr=learning_rate)
+decoder_optimizer = optim.Adam(model.decoder.parameters(), lr=learning_rate)
 criterion = nn.NLLLoss()
 
 
@@ -73,8 +81,7 @@ def main(n_instances=None):
             loss = trainer.train(
                 input_variable,
                 target_variable,
-                encoder,
-                decoder,
+                model,
                 encoder_optimizer,
                 decoder_optimizer,
                 criterion
@@ -117,4 +124,4 @@ def main(n_instances=None):
     writer.close()
 
 if __name__ == '__main__':
-    main()
+    main(n_instances=10)

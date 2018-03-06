@@ -3,7 +3,7 @@ USE_CUDA = True
 
 teacher_forcing_ratio = 1.0  # autoregressive training off
 clip = 2.0
-batch_size = 512
+batch_size = 64
 
 MAX_LENGTH = 30
 
@@ -16,7 +16,7 @@ class vocab:
     eos_idx = 1
     unk_idx = 2
 
-NEED_SAVE = True
+NEED_SAVE = False
 NEED_LOAD = False
 
 # gonna format them later
@@ -25,7 +25,7 @@ DEC_DUMP_PATH = 'decoder_{}_bs128.binary'
 LOGDIR = 'logs'  # for Tensorboard
 
 LOSSDIR = 'losses.txt'  # for our purposes (o rly?)
-n_epochs = 7
+n_epochs = 30
 
 dropout_p = 0.2
 vocab_size = 20000

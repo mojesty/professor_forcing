@@ -2,7 +2,7 @@ import torch
 from torch.utils.data.dataset import Dataset
 from torch.autograd import Variable
 
-from cfg import USE_CUDA, sos, eos, unk, eos_idx, vocab_size
+from cfg import USE_CUDA, vocab_size, vocab, max_length
 
 
 class QADataset(Dataset):
@@ -10,7 +10,7 @@ class QADataset(Dataset):
     Simple QA Dataset. Refers to torchtext.vocab for tensor creating
     """
 
-    def __init__(self, data, vocab, max_length=cfg.max_length, gpu=True):
+    def __init__(self, data, vocab, max_length=max_length, gpu=True):
         self.vocab = vocab
         self.data = data
         self.max_length = max_length
@@ -20,16 +20,16 @@ class QADataset(Dataset):
         # be careful with it, as it preprocceses
         res = []
         for i, word in enumerate(sentence.split(' ')[:self.max_length]):
-            if word == sos:
+            if word == vocab.sos:
                 res.append(0)
-            elif word == eos:
+            elif word == vocab.eos:
                 res.append(1)
             elif word in self.vocab.stoi and self.vocab.stoi[word] < vocab_size - 3:
                 res.append(self.vocab.stoi[word] + 3)
             else:
                 res.append(2)  # (self.vocab.stoi['unk'])
         # pad sequences for minibatch mode
-        res = res + [eos_idx for _ in range(self.max_length - len(res))]
+        res = res + [vocab.eos_idx for _ in range(self.max_length - len(res))]
         return torch.cuda.LongTensor(res) if self.gpu else torch.LongTensor(res)
 
     def variable_from_sentence(self, sentence):
@@ -53,10 +53,10 @@ class QADataset(Dataset):
 
     def itos(self, i):
         if i == 0:
-            return sos
+            return vocab.sos
         elif i == 1:
-            return eos
+            return vocab.eos
         elif i == 2:
-            return unk
+            return vocab.unk
         else:
             return self.vocab.itos[i - 3]

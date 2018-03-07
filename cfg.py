@@ -20,16 +20,16 @@ NEED_SAVE = False
 NEED_LOAD = False
 
 # gonna format them later
-ENC_DUMP_PATH = 'encoder_{}_bs128.binary'
-DEC_DUMP_PATH = 'decoder_{}_bs128.binary'
+ENC_DUMP_PATH = 'models/encoder_{}_2layers.binary'
+DEC_DUMP_PATH = 'models/decoder_{}_2layers.binary'
 LOGDIR = 'logs'  # for Tensorboard
 
 LOSSDIR = 'losses.txt'  # for our purposes (o rly?)
 n_epochs = 30
 
 dropout_p = 0.2
-vocab_size = 20000
-n_layers = 1
+vocab_size = 40000
+n_layers = 2
 hidden_size = 300
 attn_model = 'general'
 

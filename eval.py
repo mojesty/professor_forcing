@@ -30,8 +30,8 @@ def evaluate(model, dataset_idx=None, sentence=None, **kwargs):
     if dataset_idx is not None:
         input = Variable(qadataset[dataset_idx][0].unsqueeze(0))  # 1 x instance_length
     elif sentence is not None:
-        raise NotImplementedError
-        input = Variable(qadataset.indexes_from_sentence(sentence.split()[:MAX_LENGTH]))
+        prepared_sentence = ' '.join([cfg.vocab.sos] + sentence.lower().split()[:MAX_LENGTH] + [cfg.vocab.eos])
+        input = Variable(qadataset.indexes_from_sentence(prepared_sentence).unsqueeze(0))
     else:
         raise ValueError('Either dataset idx from 0 to {} or sentence should be specified'.format(len(qadataset)))
 
@@ -41,14 +41,18 @@ def evaluate(model, dataset_idx=None, sentence=None, **kwargs):
 
     return decoded_words, decoder_attentions[:len(word_indices), :len(word_indices)]
 
-def main(model, i):
+def main(model, dataset_idx=None, sentence=None):
     print('------------------------------------------------')
-    print('Sentence  {}'.format(qadataset.data[i]['context']))
-    print('Question  {}'.format(qadataset.data[i]['question']))
+    if dataset_idx:
+        print('Sentence  {}'.format(qadataset.data[dataset_idx]['context']))
+        print('Question  {}'.format(qadataset.data[dataset_idx]['question']))
+    elif sentence:
+        print('Sentence  {}'.format(sentence))
     for j in range(5):
         words, _ = evaluate(
             model,
-            dataset_idx=i,
+            dataset_idx=dataset_idx,
+            sentence=sentence,
             fill_unks='attn',
             sample_method='multinomial'
         )
@@ -66,5 +70,5 @@ if __name__ == '__main__':
     model.decoder = decoder
     for idx in range(15):
         idx = random.randint(0, len(qadataset))
-        main(model, idx)
+        main(model, None, sentence='i am going to the kitchen with my brave friend .')
 

@@ -44,8 +44,6 @@ class QADataset(Dataset):
         return (
             self.indexes_from_sentence(self.data[idx]['context']),
             self.indexes_from_sentence(self.data[idx]['question']),
-            self.data[idx]['context'],
-            self.data[idx]['question']
         )
 
     def __len__(self):

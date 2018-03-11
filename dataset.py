@@ -8,6 +8,14 @@ from cfg import USE_CUDA, vocab, max_length, model
 class QADataset(Dataset):
     """
     Simple QA Dataset. Refers to torchtext.vocab for tensor creating
+    Max_length is the maximum length of its data (questiond and answer),
+    instances are trimmed/padded if necessary
+    n_special is number of special symbols
+    Current special symbols:
+    * sos
+    * eos
+    * unk
+    See cfg.py for details
     """
 
     def __init__(self, data, vocab, max_length=max_length, gpu=True):
@@ -15,6 +23,7 @@ class QADataset(Dataset):
         self.data = data
         self.max_length = max_length
         self.gpu = gpu
+        self.n_special = 3
 
     def indexes_from_sentence(self, sentence):
         # be careful with it, as it preprocceses

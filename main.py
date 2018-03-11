@@ -98,7 +98,7 @@ def main(n_instances=None):
             if idx % print_every == 0:
                 losses.append(loss)
             writer.add_scalar(
-                'logs/300_40k_2l_adam',
+                cfg.NAME,
                 loss,
                 (epoch - 1) * (len(qadataset) if n_instances is None else n_instances) + idx
             )
@@ -126,11 +126,16 @@ def main(n_instances=None):
             f.close()
 
         if cfg.NEED_SAVE:
-            # saving the model after each epoch for simplicity
+            if cfg.save == 'all':
+                pass
+            elif cfg.save == 'last':
+                epoch = 'last'  # we overwrite the iterable variable but it's okay
+            else:
+                raise NotImplementedError
             torch.save(encoder, cfg.ENC_DUMP_PATH.format(epoch))
             torch.save(decoder, cfg.DEC_DUMP_PATH.format(epoch))
 
     writer.close()
 
 if __name__ == '__main__':
-    main(n_instances=10)
+    main()

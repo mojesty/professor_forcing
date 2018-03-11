@@ -18,16 +18,22 @@ class vocab:
     eos_idx = 1
     unk_idx = 2
 
-NEED_SAVE = False
+NEED_SAVE = True
 NEED_LOAD = False
+save = 'last'
+assert save in ['all', 'last', 'best']  # TODO: last and best
 
 # gonna format them later
-ENC_DUMP_PATH = 'models/encoder_{}_2layers.binary'
-DEC_DUMP_PATH = 'models/decoder_{}_2layers.binary'
-LOGDIR = 'logs'  # for Tensorboard
+ENC_DUMP_PATH = 'models/encoder_{}_2layers_bidir.binary'
+DEC_DUMP_PATH = 'models/decoder_{}_2layers_bidir.binary'
+
+# Tensorboard configs
+# TODO: organize
+LOGDIR = 'logs'
+NAME = 'logs/300_40k_2l_bidir_adam'
 
 LOSSDIR = 'losses.txt'  # for our purposes (o rly?)
-n_epochs = 10
+n_epochs = 8
 
 
 max_length = 30

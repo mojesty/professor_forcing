@@ -41,6 +41,7 @@ def evaluate(model, dataset_idx=None, sentence=None, **kwargs):
 
     return decoded_words, decoder_attentions[:len(word_indices), :len(word_indices)]
 
+
 def main(model, dataset_idx=None, sentence=None):
     print('------------------------------------------------')
     if dataset_idx:
@@ -59,15 +60,11 @@ def main(model, dataset_idx=None, sentence=None):
         print('Generated {}'.format(' '.join(words)))
 
 if __name__ == '__main__':
-    epoch = 7
+    epoch = 'last'
     print('Successfully loaded from disk')
     encoder = torch.load(cfg.ENC_DUMP_PATH.format(epoch))
     decoder = torch.load(cfg.DEC_DUMP_PATH.format(epoch))
-    model = Translator(1, 1, 1, .1, 'general')
-    del model.encoder
-    del model.decoder
-    model.encoder = encoder
-    model.decoder = decoder
+    model = Translator(1, 1, 1, .1, 'general', encoder, decoder)
     for idx in range(15):
         idx = random.randint(0, len(qadataset))
         main(model, None, sentence='i am going to the kitchen with my brave friend .')

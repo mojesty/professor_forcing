@@ -1,9 +1,4 @@
-import unicodedata
-import string
-import re
-import random
-import time
-import math
+from cfg import model
 
 import torch
 import torch.nn as nn
@@ -18,33 +13,51 @@ from cfg import USE_CUDA
 
 
 class EncoderRNN(nn.Module):
-    def __init__(self, input_size, hidden_size, n_layers=1):
+    def __init__(
+            self, input_size, hidden_size, n_layers=1, dropout_p=0.2,
+            bidirectional=model.bidirectional
+    ):
         # input size means embedding size as usual
         super(EncoderRNN, self).__init__()
 
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.n_layers = n_layers
+        self.num_directions = 2 if bidirectional else 1
 
-        self.embedding = nn.Embedding(input_size,
-                                      hidden_size)  # input_size means vocab size, hidden_size means embedding_dim
-        self.gru = nn.GRU(hidden_size, hidden_size, n_layers)  # for simplicity
+        self.embedding = nn.Embedding(
+            input_size,
+            hidden_size
+        )  # input_size means vocab size, hidden_size means embedding_dim
+        self.gru = nn.GRU(
+            hidden_size,
+            hidden_size,
+            n_layers,
+            dropout=dropout_p,
+            bidirectional=bidirectional
+        )
 
     def forward(self, word_inputs, hidden):
-        # word_inputs of shape (batch_size * seq_len)
-        # hidden of shape (seq_len * batch_size * hidden_size)
+        # word_inputs of shape [batch_size x seq_len]
+        # hidden [seq_len x batch_size x hidden_size * num_directions]
+
         seq_len, batch_size = word_inputs.size(1), word_inputs.size(0)
-        # embedding layer requires word_input of shape (N, W)
+
+        # embedding layer requires word_input of shape [N x W]
         embedded = self.embedding(word_inputs).view(seq_len, batch_size, -1)
-        # embedded of shape (seq_len * batch_size * hidden_size)
+        # [seq_len x batch_size x hidden_size]
         output, hidden = self.gru(embedded, hidden)
-        # output of shape (seq_len * batch_size * hidden_size)
-        # hidden does not change its shape
+        # output [seq_len x batch_size x hidden_size * num_directions]
+
+        # we save only those hidden state that corresponds to forward pass
+        hidden = hidden.view(self.n_layers, -1, batch_size, self.hidden_size)[:, 0, :, :].contiguous()
+        # hidden [n_layers x batch_size x hidden_size]
         return output, hidden
 
     def init_hidden(self, batch_size):
         # TODO: different initialization strategies
-        hidden = Variable(torch.zeros(self.n_layers, batch_size, self.hidden_size))
+        hidden = Variable(torch.zeros(
+            self.n_layers * self.num_directions, batch_size, self.hidden_size))
         if USE_CUDA:
             hidden = hidden.cuda()
         return hidden

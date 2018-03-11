@@ -1,9 +1,11 @@
 # TODO: organize it
+from typing import NamedTuple
+
 USE_CUDA = True
 
 teacher_forcing_ratio = 1.0  # autoregressive training off
 clip = 2.0
-batch_size = 64
+batch_size = 256
 
 MAX_LENGTH = 30
 
@@ -25,12 +27,17 @@ DEC_DUMP_PATH = 'models/decoder_{}_2layers.binary'
 LOGDIR = 'logs'  # for Tensorboard
 
 LOSSDIR = 'losses.txt'  # for our purposes (o rly?)
-n_epochs = 30
+n_epochs = 10
 
-dropout_p = 0.2
-vocab_size = 40000
-n_layers = 2
-hidden_size = 300
-attn_model = 'general'
 
 max_length = 30
+
+
+class model:
+    dropout_p = 0.2
+    vocab_size = 40000
+    n_layers = 2
+    hidden_size = 300
+    attn_model = 'general'
+
+    bidirectional = True

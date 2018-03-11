@@ -9,7 +9,8 @@ from torch.autograd import Variable
 from torch.utils.data.dataloader import DataLoader
 
 import cfg
-from cfg import USE_CUDA, n_epochs, dropout_p, n_layers, hidden_size, attn_model
+from cfg import USE_CUDA, n_epochs
+from cfg import model
 from dataset import QADataset
 from model import Translator
 from modules.decoder import AttnDecoderRNN
@@ -31,8 +32,19 @@ if cfg.NEED_LOAD:
     decoder = torch.load(cfg.DEC_DUMP_PATH)
     print('Successfully loaded from disk')
 else:
-    encoder = EncoderRNN(cfg.vocab_size, hidden_size, n_layers)
-    decoder = AttnDecoderRNN(attn_model, hidden_size, cfg.vocab_size, n_layers, dropout_p=dropout_p)
+    encoder = EncoderRNN(
+        cfg.model.vocab_size,
+        model.hidden_size,
+        model.n_layers,
+        dropout_p=model.dropout_p
+    )
+    decoder = AttnDecoderRNN(
+        model.attn_model,
+        model.hidden_size,
+        model.vocab_size,
+        model.n_layers,
+        dropout_p=model.dropout_p
+    )
     print('Initialized new models')
 
 # Move models to GPU
@@ -41,11 +53,8 @@ if USE_CUDA:
     decoder.cuda()
 
 # TODO: too hard
-model = Translator(1, 1, 1, .1, 'general')
-del model.encoder
-del model.decoder
-model.encoder = encoder
-model.decoder = decoder
+# TODO: turn off dropout when evaluating
+model = Translator(1, 1, 1, 1, 'general', encoder=encoder, decoder=decoder)
 
 # Initialize optimizers and criterion
 learning_rate = 0.00005
@@ -89,9 +98,9 @@ def main(n_instances=None):
             if idx % print_every == 0:
                 losses.append(loss)
             writer.add_scalar(
-                'logs/300_adam',
+                'logs/300_40k_2l_adam',
                 loss,
-                epoch * (len(qadataset) if n_instances is None else n_instances) + idx
+                (epoch - 1) * (len(qadataset) if n_instances is None else n_instances) + idx
             )
 
             # Keep track of loss

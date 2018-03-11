@@ -10,11 +10,18 @@ from modules.encoder import EncoderRNN
 
 class Translator(nn.Module):
 
-    def __init__(self, vocab_size, hidden_size, n_layers, dropout_p, attn_model):
+    def __init__(
+            self, vocab_size, hidden_size, n_layers, dropout_p, attn_model,
+            encoder=None, decoder=None):
         super(Translator, self).__init__()
 
-        self.encoder = EncoderRNN(vocab_size, hidden_size, n_layers)
-        self.decoder = AttnDecoderRNN(attn_model, hidden_size, cfg.vocab_size, n_layers, dropout_p=dropout_p)
+        # TODO: think how organize arguments
+        self.encoder = EncoderRNN(
+            vocab_size, hidden_size, n_layers
+        ) if encoder is None else encoder
+        self.decoder = AttnDecoderRNN(
+            attn_model, hidden_size, cfg.model.vocab_size, n_layers, dropout_p=dropout_p
+        ) if decoder is None else decoder
 
     def zero_grad(self):
         self.encoder.zero_grad()
@@ -58,8 +65,10 @@ class Translator(nn.Module):
 
         # start with <SOS> token for every sentence in minibatch
         decoder_input = Variable(torch.LongTensor([vocab.sos_idx]).repeat(1, batch_size)).t()
-        # context of shape batch_size * hidden_size
-        decoder_context = Variable(torch.zeros(batch_size, self.decoder.hidden_size))
+        # context of shape [batch_size x hidden_size]
+        decoder_context = Variable(
+            torch.zeros(batch_size, self.decoder.hidden_size * self.decoder.enc_num_directions)
+        )
         decoder_hidden = encoder_hidden
         if USE_CUDA:
             decoder_input = decoder_input.cuda()
@@ -79,8 +88,9 @@ class Translator(nn.Module):
                 encoder_outputs
             )
             if mode == 'training':
-                decoder_input = target[:, di]  # Next target is next input
-                # TODO: memory leaky code!
+                # Next target is next input
+                decoder_input = target[:, di].unsqueeze(1)
+                # TODO: possibly memory leaky code!
                 decoder_outputs.append(decoder_output)
 
             elif mode == 'inference':

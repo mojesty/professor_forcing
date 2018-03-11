@@ -6,14 +6,18 @@ from torch.nn import functional as F
 from cfg import USE_CUDA
 
 class Attn(nn.Module):
-    def __init__(self, method, hidden_size, max_length=31):
+    def __init__(self, method, hidden_size, bidirectional):
         super(Attn, self).__init__()
 
         self.method = method
         self.hidden_size = hidden_size
 
         if self.method == 'general':
-            self.attn = nn.Linear(hidden_size, hidden_size)
+            if not bidirectional:
+                self.attn = nn.Linear(hidden_size, hidden_size)
+            else:
+                # TODO: assert
+                self.attn = nn.Linear(hidden_size, hidden_size // 2)
 
         elif self.method == 'concat':
             raise NotImplementedError
@@ -23,13 +27,13 @@ class Attn(nn.Module):
             raise NotImplementedError
 
     def forward(self, hidden, encoder_outputs):
-        # hidden of shape (batch_size * hidden_size)
-        # encoder_outputs of shape (seq_len, batch_size, hidden_size)
+        # hidden of shape          [batch_size x hidden_size]
+        # encoder_outputs          [seq_len x batch_size x hidden_size]
         seq_len, batch_size = encoder_outputs.size(0), encoder_outputs.size(1)
 
         # Create variable to store attention energies
         attn_energies = Variable(torch.zeros(seq_len, batch_size))
-        # attn_energies of shape (seq_len * batch_size)
+        # attn_energies:           [seq_len x batch_size]
         if USE_CUDA: attn_energies = attn_energies.cuda()
 
         # Calculate energies for each encoder output
@@ -47,11 +51,9 @@ class Attn(nn.Module):
 
         elif self.method == 'general':
             energy = self.attn(encoder_output)
-            # scalar version turned off 24.02.2018
-            # energy = hidden.dot(energy)
             # vector version
             energy = torch.bmm(hidden.unsqueeze(1), energy.unsqueeze(2))
-            # energy of size (batch_size * 1 * 1)
+            # energy                 [batch_size x 1 x 1]
             return energy.squeeze()
 
         elif self.method == 'concat':

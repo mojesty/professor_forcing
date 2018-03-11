@@ -2,7 +2,7 @@ import torch
 from torch.utils.data.dataset import Dataset
 from torch.autograd import Variable
 
-from cfg import USE_CUDA, vocab_size, vocab, max_length
+from cfg import USE_CUDA, vocab, max_length, model
 
 
 class QADataset(Dataset):
@@ -24,7 +24,7 @@ class QADataset(Dataset):
                 res.append(0)
             elif word == vocab.eos:
                 res.append(1)
-            elif word in self.vocab.stoi and self.vocab.stoi[word] < vocab_size - 3:
+            elif word in self.vocab.stoi and self.vocab.stoi[word] < model.vocab_size - 3:
                 res.append(self.vocab.stoi[word] + 3)
             else:
                 res.append(2)  # (self.vocab.stoi['unk'])

@@ -34,12 +34,14 @@ if cfg.NEED_LOAD:
 else:
     encoder = EncoderRNN(
         cfg.model.vocab_size,
+        model.embedding_size,
         model.hidden_size,
         model.n_layers,
         dropout_p=model.dropout_p
     )
     decoder = AttnDecoderRNN(
         model.attn_model,
+        model.embedding_size,
         model.hidden_size,
         model.vocab_size,
         model.n_layers,
@@ -54,7 +56,7 @@ if USE_CUDA:
 
 # TODO: too hard
 # TODO: turn off dropout when evaluating
-model = Translator(1, 1, 1, 1, 'general', encoder=encoder, decoder=decoder)
+model = Translator(0, 0, 0, 0, 0, 'general', encoder=encoder, decoder=decoder)
 
 # Initialize optimizers and criterion
 learning_rate = 0.00005
@@ -138,4 +140,4 @@ def main(n_instances=None):
     writer.close()
 
 if __name__ == '__main__':
-    main()
+    main(n_instances=10)

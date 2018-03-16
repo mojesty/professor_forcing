@@ -8,7 +8,7 @@ from cfg import USE_CUDA, model
 
 class AttnDecoderRNN(nn.Module):
     def __init__(
-            self, attn_model, hidden_size, output_size,
+            self, attn_model, embedding_size, hidden_size, output_size,
             n_layers=1, dropout_p=0.1, bidirectional=model.bidirectional):
         super(AttnDecoderRNN, self).__init__()
 
@@ -21,12 +21,13 @@ class AttnDecoderRNN(nn.Module):
         self.hidden_size = hidden_size
 
         # Define layers
-        self.embedding = nn.Embedding(output_size, hidden_size)
+        self.embedding = nn.Embedding(output_size, embedding_size)
         self.gru = nn.GRU(
-            hidden_size * (self.enc_num_directions + 1), hidden_size, n_layers, dropout=dropout_p
+            hidden_size * self.enc_num_directions + embedding_size,
+            hidden_size, n_layers, dropout=dropout_p
         )
         self.out = nn.Linear(
-            hidden_size * (self.enc_num_directions + 1), output_size
+            hidden_size * self.enc_num_directions + hidden_size, output_size
         )
 
         # Choose attention model
@@ -48,7 +49,7 @@ class AttnDecoderRNN(nn.Module):
 
         # Combine embedded input word and last context, run through RNN
         rnn_input = torch.cat((word_embedded, last_context.unsqueeze(0)), 2)
-        # rnn_input:            [1 x batch_size x (embedding_size * 2)]
+        # rnn_input:            [1 x batch_size x (embedding_size + hidden_size * dirs)]
         rnn_output, hidden = self.gru(rnn_input, last_hidden)
 
         # Calculate attention from current RNN state and all encoder outputs; apply to encoder outputs

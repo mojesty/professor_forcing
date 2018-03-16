@@ -11,16 +11,16 @@ from modules.encoder import EncoderRNN
 class Translator(nn.Module):
 
     def __init__(
-            self, vocab_size, hidden_size, n_layers, dropout_p, attn_model,
+            self, vocab_size, embedding_size, hidden_size, n_layers, dropout_p, attn_model,
             encoder=None, decoder=None):
         super(Translator, self).__init__()
 
         # TODO: think how organize arguments
         self.encoder = EncoderRNN(
-            vocab_size, hidden_size, n_layers
+            vocab_size, embedding_size, hidden_size, n_layers
         ) if encoder is None else encoder
         self.decoder = AttnDecoderRNN(
-            attn_model, hidden_size, cfg.model.vocab_size, n_layers, dropout_p=dropout_p
+            attn_model, embedding_size, hidden_size, cfg.model.vocab_size, n_layers, dropout_p=dropout_p
         ) if decoder is None else decoder
 
     def zero_grad(self):

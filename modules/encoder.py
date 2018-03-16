@@ -14,23 +14,23 @@ from cfg import USE_CUDA
 
 class EncoderRNN(nn.Module):
     def __init__(
-            self, input_size, hidden_size, n_layers=1, dropout_p=0.2,
+            self, vocab_size, embedding_size, hidden_size, n_layers=1, dropout_p=0.2,
             bidirectional=model.bidirectional
     ):
         # input size means embedding size as usual
         super(EncoderRNN, self).__init__()
 
-        self.input_size = input_size
+        self.input_size = vocab_size
         self.hidden_size = hidden_size
         self.n_layers = n_layers
         self.num_directions = 2 if bidirectional else 1
 
         self.embedding = nn.Embedding(
-            input_size,
-            hidden_size
+            vocab_size,
+            embedding_size
         )  # input_size means vocab size, hidden_size means embedding_dim
         self.gru = nn.GRU(
-            hidden_size,
+            embedding_size,
             hidden_size,
             n_layers,
             dropout=dropout_p,
@@ -45,7 +45,7 @@ class EncoderRNN(nn.Module):
 
         # embedding layer requires word_input of shape [N x W]
         embedded = self.embedding(word_inputs).view(seq_len, batch_size, -1)
-        # [seq_len x batch_size x hidden_size]
+        # [seq_len x batch_size x embedding_size]
         output, hidden = self.gru(embedded, hidden)
         # output [seq_len x batch_size x hidden_size * num_directions]
 
@@ -65,7 +65,7 @@ class EncoderRNN(nn.Module):
 
 if __name__ == '__main__':
     encoder_test = EncoderRNN(
-        input_size=31, hidden_size=10, n_layers=1)
+        vocab_size=31, hidden_size=10, n_layers=1)
     print(encoder_test)
 
     encoder_hidden = encoder_test.init_hidden().cpu()

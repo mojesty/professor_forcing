@@ -18,7 +18,7 @@ class vocab:
     eos_idx = 1
     unk_idx = 2
 
-NEED_SAVE = True
+NEED_SAVE = False
 NEED_LOAD = False
 save = 'last'
 assert save in ['all', 'last', 'best']  # TODO: last and best
@@ -33,7 +33,7 @@ LOGDIR = 'logs'
 NAME = 'logs/300_40k_2l_bidir_adam'
 
 LOSSDIR = 'losses.txt'  # for our purposes (o rly?)
-n_epochs = 8
+n_epochs = 18
 
 
 max_length = 30
@@ -43,7 +43,12 @@ class model:
     dropout_p = 0.2
     vocab_size = 40000
     n_layers = 2
-    hidden_size = 300
+    embedding_size = 300
+    hidden_size = 500
     attn_model = 'general'
 
     bidirectional = True
+
+class sample_methods:
+    argmax = 'argmax'
+    multinomial = 'multinomial'

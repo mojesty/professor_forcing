@@ -25,6 +25,7 @@ def evaluate(model, dataset_idx=None, sentence=None, **kwargs):
     :param max_length:
     :return: list of decoded words
     """
+    model.eval()
     sample_method = kwargs.get('sample_method', 'multinomial')
     assert sample_method in ['argmax', 'multinomial']
     if dataset_idx is not None:
@@ -67,5 +68,10 @@ if __name__ == '__main__':
     model = Translator(0, 0, 0, 0, 0, 'general', encoder, decoder)
     for idx in range(15):
         idx = random.randint(0, len(qadataset))
-        main(model, None, sentence='i am going to the kitchen with my brave friend .')
+        main(
+            model,
+            idx,
+            sentence=None
+            #sentence='Elon Musk is our generation millionaire who launched his Tesla into the space'.lower()
+        )
 

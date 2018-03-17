@@ -1,5 +1,5 @@
 # TODO: organize it
-from typing import NamedTuple
+import os
 
 USE_CUDA = True
 
@@ -44,7 +44,7 @@ class model:
     vocab_size = 40000
     n_layers = 2
     embedding_size = 300
-    hidden_size = 500
+    hidden_size = 300
     attn_model = 'general'
 
     bidirectional = True
@@ -52,3 +52,6 @@ class model:
 class sample_methods:
     argmax = 'argmax'
     multinomial = 'multinomial'
+
+# for easy CUDA debug
+# os.environ['CUDA_LAUNCH_BLOCKING'] = True

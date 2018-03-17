@@ -1,3 +1,4 @@
+import cfg
 from cfg import model
 
 import torch
@@ -54,10 +55,14 @@ class EncoderRNN(nn.Module):
         # hidden [n_layers x batch_size x hidden_size]
         return output, hidden
 
-    def init_hidden(self, batch_size):
-        # TODO: different initialization strategies
-        hidden = Variable(torch.zeros(
-            self.n_layers * self.num_directions, batch_size, self.hidden_size))
+    def init_hidden(self, batch_size, strategy=cfg.inits.xavier):
+        if strategy == cfg.inits.zeros:
+            hidden = Variable(torch.zeros(
+                self.n_layers * self.num_directions, batch_size, self.hidden_size))
+        elif strategy == cfg.inits.xavier:
+            hidden = torch.zeros(
+                self.n_layers * self.num_directions, batch_size, self.hidden_size)
+            hidden = Variable(torch.nn.init.xavier_normal(hidden))
         if USE_CUDA:
             hidden = hidden.cuda()
         return hidden

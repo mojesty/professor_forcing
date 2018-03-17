@@ -4,6 +4,8 @@ import time
 
 import torch
 
+import cfg
+
 
 def as_minutes(s):
     m = math.floor(s / 60)
@@ -30,10 +32,10 @@ def pretrain_embedding(embedding, matrix, freeze=True):
     assert isinstance(matrix, torch.FloatTensor)
     assert embedding._parameters['weight'].size() == matrix.size()
 
-    embedding._parameters['weight'] = matrix
-    if freeze:
-        for param in embedding.parameters():
-            param.requires_grad = False
+    embedding._parameters['weight'] = torch.nn.parameter.Parameter(
+        matrix, requires_grad=not freeze
+    )
+
 
 def make_pretrained_embedding_matrix(dataset, pretrained_embedding):
     # TODO: not random
@@ -44,4 +46,12 @@ def make_pretrained_embedding_matrix(dataset, pretrained_embedding):
     :param pretrained_embedding:
     :return:
     """
-    pass
+    assert isinstance(pretrained_embedding, torch.FloatTensor)
+    _t = torch.zeros(dataset.n_special, pretrained_embedding.size(1))
+    torch.normal(std=torch.ones_like(_t) * 4, out=_t)
+    size = cfg.model.vocab_size - dataset.n_special
+
+    new_vectors = torch.cat((_t, pretrained_embedding[:size]), 0)
+    new_vectors = new_vectors.div(torch.norm(new_vectors, 2))
+    return new_vectors
+

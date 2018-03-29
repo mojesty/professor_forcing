@@ -58,9 +58,7 @@ class Translator(nn.Module):
     def forward(self, input, target=None, mode='inference', sample_method='multinomial', fill_unks='attn'):
         assert mode in ['training', 'inference']
         batch_size = input.size(0)
-        # target_length = target.size(1) if target else cfg.max_length
         encoder_hidden = self.encoder.init_hidden(batch_size)
-        # Run encoder
         encoder_outputs, encoder_hidden = self.encoder(input, encoder_hidden)
 
         # start with <SOS> token for every sentence in minibatch
@@ -87,15 +85,13 @@ class Translator(nn.Module):
                 decoder_hidden,
                 encoder_outputs
             )
-            if mode == 'training':
+            if mode == 'training' and cfg.teacher_forcing:
                 # Next target is next input
                 decoder_input = target[:, di].unsqueeze(1)
                 # TODO: possibly memory leaky code!
                 decoder_outputs.append(decoder_output)
 
-            elif mode == 'inference':
-                assert batch_size == 1, 'Currently only scalar inference is supported'
-
+            elif mode == 'inference' or mode == 'training' and cfg.teacher_forcing:
                 next_token_idx, from_attn = self._sample(
                     decoder_output,
                     decoder_attention,
@@ -103,9 +99,11 @@ class Translator(nn.Module):
                     method=sample_method,
                     fill_unks=fill_unks
                 )
-                indices.append(next_token_idx)
-                from_attns.append(from_attn)
-                decoder_attentions[di, :decoder_attention.size(2)] += decoder_attention.squeeze(0).squeeze(0).cpu().data
+                if mode == 'inference':
+                    # save additional data only for inference
+                    indices.append(next_token_idx)
+                    from_attns.append(from_attn)
+                    decoder_attentions[di, :decoder_attention.size(2)] += decoder_attention.squeeze(0).squeeze(0).cpu().data
 
                 decoder_input = Variable(torch.LongTensor([[next_token_idx]]))
                 if USE_CUDA: decoder_input = decoder_input.cuda()

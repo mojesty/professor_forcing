@@ -140,4 +140,4 @@ def main(n_instances=None):
     writer.close()
 
 if __name__ == '__main__':
-    main(n_instances=10)
+    main()

@@ -1,15 +1,17 @@
 class dataset:
     # N = 10000
-    num_chars = 10
-    num_pad = 20
+    num_chars = 3
+    num_pad = 5
 
 class CopyModel:
-    hidden_size = 64
+    hidden_size = 128
     batch_size = 256
 
-vocab_size = 10
-learning_rate = 0.005
+vocab_size = 4
+learning_rate = 0.0005
 
-n_epochs = 10000
+n_epochs = 500000
 
 gpu = True
+
+teacher_forcing = True

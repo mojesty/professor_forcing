@@ -1,5 +1,6 @@
 import time
 
+import torch
 from torch import optim, nn
 from torch.autograd import Variable
 from torch.utils.data.dataloader import DataLoader
@@ -24,7 +25,7 @@ if cfg.gpu:
 print('Initialized new model')
 
 
-encoder_optimizer = optim.RMSprop(
+encoder_optimizer = optim.Adam(
     [p for p in model.parameters() if p.requires_grad],
     lr=cfg.learning_rate
 )
@@ -36,7 +37,7 @@ plot_every = 200
 print_every = 10
 
 
-def main():
+def train():
     # Keep track of time elapsed and running averages
     start = time.time()
     losses = []
@@ -74,7 +75,25 @@ def main():
                 time_since(start, epoch / cfg.n_epochs), epoch, epoch / cfg.n_epochs * 100, print_loss_avg
             )
             print(print_summary)
+    torch.save(model, 'GRU_nhid_{}_nepoch_{}.pickle'.format(
+        cfg.CopyModel.hidden_size, cfg.n_epochs
+    ))
 
+def test(model=None):
+    if model is None:
+        model = torch.load('GRU_nhid_{}_nepoch_{}.pickle'.format(
+            cfg.CopyModel.hidden_size, cfg.n_epochs
+        ))
+    test_input, test_target = copydataset[0]
+    test_input.unsqueeze_(0)  # [1 x seq_len]
+
+    model.hidden = model.init_hidden(batch_size=1)
+    output = model(Variable(test_input))
+    print('Input:  ', test_input.cpu())
+    print('Output: ', output.cpu().data)
+    print('Target: ', test_target.cpu())
 
 if __name__ == '__main__':
-    main()
+    train()
+    test(model)
+

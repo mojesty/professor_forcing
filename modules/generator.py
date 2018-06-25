@@ -45,22 +45,45 @@ class Generator(nn.Module):
         unnormalized_scores = self.linear(next_hidden)    # [batch_size x vocab_size]
 
         scores = F.softmax(unnormalized_scores, dim=1)    # [batch_size x vocab_size]
-        return scores
+        return scores, next_hidden
 
-    def consume(self, word_inputs, start_hidden, sampling, method=multinomial):
+    def consume(self, word_inputs, hidden, sampling, method=multinomial):
         # word_inputs                                       [batch_size x seq_len]
         # hidden                                            [batch_size x hidden_size]
+        # store all hidden states for discriminator
+        hidden_states = []
+        seq_len = word_inputs.size(1)
+        criterion = nn.CrossEntropyLoss()
+        loss = 0
         if sampling:
             # autoregressive mode
+            # we need only initial word inputs
+            current_word_inputs = word_inputs[:, 1]
+            for idx in range(seq_len - 1):
+                scores, hidden = self(current_word_inputs, hidden)
+                loss += criterion(scores, word_inputs[:, idx+1])
+                hidden_states.append(hidden)
+                current_word_inputs = self._sample(scores, method)
 
+        else:
+            # teacher forcing mode
+            for idx in range(seq_len - 1):
+                scores, hidden = self(word_inputs[:, idx], hidden)
+                loss += criterion(scores, word_inputs[:, idx + 1])
+                hidden_states.append(hidden)
 
+        # we still can't go backward because we another losses are not computed
+        return loss, hidden_states
 
     def _sample(self, scores, method):
         # scores                                            [batch_size x vocab_size]
+        # method                                            cfg.sample_methods
         if method == 'argmax':
-            topv, topi = scores.data.topk(1)
+            # find elements with max values for each score list in the minibatch
+            topv, topi = scores.data.topk(1, dim=1)       # [batch_size x 1]
         elif method == 'multinomial':
-            topi = torch.multinomial(scores.cpu().exp().data, 1)
+            _scores = scores.cpu().exp().data
+            topi = torch.multinomial(_scores, 1)          # [batch_size x 1]
         topi.to(cfg.device)
         return topi
 

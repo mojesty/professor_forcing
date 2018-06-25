@@ -11,8 +11,8 @@ batch_size = 512
 
 MAX_LENGTH = 30
 
-class vocab:
 
+class vocab:
     sos = 'bos'
     eos = 'eos'
     unk = 'unk'
@@ -51,14 +51,15 @@ class model:
 
     bidirectional = False
 
+
 class sample_methods:
     argmax = 'argmax'
     multinomial = 'multinomial'
 
 teacher_forcing = True
 
+
 class inits:
     xavier = 'xavied'
-    zeros='zeros'
-# for easy CUDA debug
-# os.environ['CUDA_LAUNCH_BLOCKING'] = True
+    zeros = 'zeros'
+

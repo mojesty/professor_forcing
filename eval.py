@@ -9,12 +9,12 @@ from torch.autograd import Variable
 
 import cfg
 from cfg import MAX_LENGTH, USE_CUDA
-from dataset import QADataset
+from dataset import LMDataset
 from model import Translator
 
 vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
 final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_final_data.pickle', 'rb'))
-qadataset = QADataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
+qadataset = LMDataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
 qaloader = DataLoader(qadataset, batch_size=1, shuffle=False)
 
 

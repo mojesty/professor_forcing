@@ -2,10 +2,10 @@ import torch
 from torch.utils.data.dataset import Dataset
 from torch.autograd import Variable
 
-from cfg import USE_CUDA, vocab, max_length, model
+from cfg import device, vocab, max_length, model
 
 
-class QADataset(Dataset):
+class LMDataset(Dataset):
     """
     Simple QA Dataset. Refers to torchtext.vocab for tensor creating
     Max_length is the maximum length of its data (questiond and answer),
@@ -18,11 +18,10 @@ class QADataset(Dataset):
     See cfg.py for details
     """
 
-    def __init__(self, data, vocab, max_length=max_length, gpu=True):
+    def __init__(self, data, vocab, max_length=max_length):
         self.vocab = vocab
         self.data = data
         self.max_length = max_length
-        self.gpu = gpu
         self.n_special = 3
 
     def indexes_from_sentence(self, sentence):
@@ -39,14 +38,11 @@ class QADataset(Dataset):
                 res.append(2)  # (self.vocab.stoi['unk'])
         # pad sequences for minibatch mode
         res = res + [vocab.eos_idx for _ in range(self.max_length - len(res))]
-        return torch.cuda.LongTensor(res) if self.gpu else torch.LongTensor(res)
+        return torch.LongTensor(res).to(device)
 
     def variable_from_sentence(self, sentence):
-        indexes = self.indexes_from_sentence(sentence)
-        # TODO: do we need varialbes?
-        var = Variable(indexes)
-        if USE_CUDA:
-            var = var.cuda()
+        var = self.indexes_from_sentence(sentence)
+        var.to(device)
         return var
 
     def __getitem__(self, idx):

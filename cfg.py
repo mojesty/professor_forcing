@@ -1,7 +1,9 @@
-# TODO: organize it
-import os
+import torch
 
 USE_CUDA = True
+
+device = 'cuda' if torch.cuda.is_available() and USE_CUDA else 'cpu'
+
 
 teacher_forcing_ratio = 1.0  # autoregressive training off
 clip = 2.0

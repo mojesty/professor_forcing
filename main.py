@@ -11,7 +11,7 @@ from torch.utils.data.dataloader import DataLoader
 import cfg
 from cfg import USE_CUDA, n_epochs
 from cfg import model
-from dataset import QADataset
+from dataset import LMDataset
 from model import Translator
 from modules.decoder import AttnDecoderRNN
 from modules.encoder import EncoderRNN
@@ -20,7 +20,7 @@ from utils import time_since
 
 vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
 final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_final_data.pickle', 'rb'))
-qadataset = QADataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
+qadataset = LMDataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
 qaloader = DataLoader(qadataset, batch_size=cfg.batch_size, shuffle=False)
 
 writer = SummaryWriter(log_dir=cfg.LOGDIR)

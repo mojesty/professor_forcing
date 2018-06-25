@@ -9,14 +9,15 @@ from torch.autograd import Variable
 from torch.utils.data.dataloader import DataLoader
 
 import cfg
-from dataset import LMDataset
+from dataset import LMDataset, Vocab
 from modules.generator import Generator
 from trainer import Trainer
 from utils import time_since
 
-vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
-final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_final_data.pickle', 'rb'))
-lmdataset = LMDataset(vocab=vocab, data=final_data)
+# vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
+vocab = pickle.load(open('vocab.pt', 'rb'))
+corpus = pickle.load(open('data.pt', 'rb'))
+lmdataset = LMDataset(vocab=vocab, data=corpus)
 qaloader = DataLoader(lmdataset, batch_size=cfg.batch_size, shuffle=False)
 
 writer = SummaryWriter(log_dir=cfg.LOGDIR)
@@ -29,7 +30,7 @@ if cfg.NEED_LOAD:
     print('Successfully loaded from disk')
 else:
     generator = Generator(
-        cfg.model.vocab_size,
+        cfg.model.vocab_size if cfg.model.vocab_size > 0 else len(vocab.d),
         cfg.model.embedding_size,
         cfg.model.hidden_size,
     )
@@ -64,8 +65,7 @@ def main(n_instances=None):
             # print(idx)
             # Get training data for this cycle
             training_pair = batch
-            input_variable = Variable(training_pair[0])  # 1 x len(training_pair[0])
-            target_variable = Variable(training_pair[1])
+            input_variable = training_pair
 
             # Run the train function
             loss = trainer.train(

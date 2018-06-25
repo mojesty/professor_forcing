@@ -1,65 +1,76 @@
 import torch
 from torch.utils.data.dataset import Dataset
-from torch.autograd import Variable
 
-from cfg import device, vocab, max_length, model
+from cfg import device
+
+
 
 
 class LMDataset(Dataset):
     """
-    Simple QA Dataset. Refers to torchtext.vocab for tensor creating
-    Max_length is the maximum length of its data (questiond and answer),
-    instances are trimmed/padded if necessary
-    n_special is number of special symbols
-    Current special symbols:
-    * sos
-    * eos
-    * unk
-    See cfg.py for details
+    Simple LM Dataset. Refers to vocab for indexing.
     """
 
-    def __init__(self, data, vocab, max_length=max_length):
+    def __init__(self, data, vocab):
         self.vocab = vocab
         self.data = data
-        self.max_length = max_length
-        self.n_special = 3
 
     def indexes_from_sentence(self, sentence):
-        # be careful with it, as it preprocceses
-        res = []
-        for i, word in enumerate(sentence.split(' ')[:self.max_length]):
-            if word == vocab.sos:
-                res.append(0)
-            elif word == vocab.eos:
-                res.append(1)
-            elif word in self.vocab.stoi and self.vocab.stoi[word] < model.vocab_size - 3:
-                res.append(self.vocab.stoi[word] + 3)
-            else:
-                res.append(2)  # (self.vocab.stoi['unk'])
-        # pad sequences for minibatch mode
-        res = res + [vocab.eos_idx for _ in range(self.max_length - len(res))]
+        res = [self.vocab.stoi(char) for char in sentence.split(' ') if char]
         return torch.LongTensor(res).to(device)
 
-    def variable_from_sentence(self, sentence):
-        var = self.indexes_from_sentence(sentence)
-        var.to(device)
-        return var
-
     def __getitem__(self, idx):
-        return (
-            self.indexes_from_sentence(self.data[idx]['context']),
-            self.indexes_from_sentence(self.data[idx]['question']),
-        )
+        return self.indexes_from_sentence(self.data[idx])
 
     def __len__(self):
         return len(self.data)
 
-    def itos(self, i):
-        if i == 0:
-            return vocab.sos
-        elif i == 1:
-            return vocab.eos
-        elif i == 2:
-            return vocab.unk
-        else:
-            return self.vocab.itos[i - 3]
+
+class Vocab:
+    d = {' ': 4, '#': 14, '$': 13, '&': 45, "'": 23, '*': 31, '-': 30,
+         '.': 1,
+         '/': 28,
+         '0': 7,
+         '1': 47,
+         '2': 39,
+         '3': 48,
+         '4': 34,
+         '5': 11,
+         '6': 3,
+         '7': 38,
+         '8': 33,
+         '9': 40,
+         '<': 10,
+         '>': 21,
+         'N': 36,
+         '\\': 25,
+         '_': 15,
+         'a': 20,
+         'b': 49,
+         'c': 29,
+         'd': 32,
+         'e': 46,
+         'f': 5,
+         'g': 16,
+         'h': 22,
+         'i': 0,
+         'j': 41,
+         'k': 2,
+         'l': 43,
+         'm': 26,
+         'n': 35,
+         'o': 37,
+         'p': 42,
+         'q': 6,
+         'r': 18,
+         's': 24,
+         't': 9, 'u': 12, 'v': 19, 'w': 8, 'x': 17, 'y': 44, 'z': 27}
+    d_ = dict({v: k for k, v in d.items()})
+
+    def itos(self, idx):
+        return self.d_[idx]
+
+    def stoi(self, char):
+        return self.d[char]
+
+

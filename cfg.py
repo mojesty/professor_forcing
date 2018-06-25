@@ -38,15 +38,15 @@ LOSSDIR = 'losses.txt'  # for our purposes (o rly?)
 n_epochs = 10
 
 
-max_length = 30
+max_length = 100
 
 
 class model:
     dropout_p = 0.2
-    vocab_size = 5000
+    vocab_size = -1
     n_layers = 1
-    embedding_size = 300
-    hidden_size = 400
+    embedding_size = 30
+    hidden_size = 256
     attn_model = 'general'
 
     bidirectional = False

@@ -2,6 +2,8 @@ import random
 
 import torch
 from torch.autograd import Variable
+
+import cfg
 from cfg import USE_CUDA, teacher_forcing_ratio, MAX_LENGTH, clip, max_length
 
 
@@ -11,7 +13,7 @@ class Trainer:
 
 
         # Zero gradients of both optimizers
-        start_hidden = model.init_hidden(batch_size)
+        start_hidden = model.init_hidden(batch_size, strategy=cfg.inits.zeros)
         model.zero_grad()
         loss = 0
 
@@ -24,4 +26,4 @@ class Trainer:
         generator_optimizer.step()
         # decoder_optimizer.step()
 
-        return loss.data[0].cpu()
+        return loss.cpu().item()

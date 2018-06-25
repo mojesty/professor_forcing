@@ -40,7 +40,7 @@ class Generator(nn.Module):
         embedded = self.embedding(
             word_inputs).view(batch_size, -1)             # [batch_size x emb_size]
 
-        next_hidden = self.gru(embedded, hidden)          # [batch_size x hidden_size]
+        next_hidden = self.rnn(embedded, hidden)          # [batch_size x hidden_size]
 
         unnormalized_scores = self.linear(next_hidden)    # [batch_size x vocab_size]
 
@@ -52,13 +52,13 @@ class Generator(nn.Module):
         # hidden                                            [batch_size x hidden_size]
         # store all hidden states for discriminator
         hidden_states = []
-        seq_len = word_inputs.size(1)
+        seq_len, batch_size = word_inputs.size(1), word_inputs.size(0)
         criterion = nn.CrossEntropyLoss()
         loss = 0
         if sampling:
             # autoregressive mode
             # we need only initial word inputs
-            current_word_inputs = word_inputs[:, 1]
+            current_word_inputs = word_inputs[:, 1].unsqueeze(1)
             for idx in range(seq_len - 1):
                 scores, hidden = self(current_word_inputs, hidden)
                 loss += criterion(scores, word_inputs[:, idx+1])
@@ -68,7 +68,7 @@ class Generator(nn.Module):
         else:
             # teacher forcing mode
             for idx in range(seq_len - 1):
-                scores, hidden = self(word_inputs[:, idx], hidden)
+                scores, hidden = self(word_inputs[:, idx].unsqueeze(1), hidden)
                 loss += criterion(scores, word_inputs[:, idx + 1])
                 hidden_states.append(hidden)
 
@@ -89,11 +89,9 @@ class Generator(nn.Module):
 
     def init_hidden(self, batch_size, strategy=cfg.inits.xavier):
         if strategy == cfg.inits.zeros:
-            hidden = Variable(torch.zeros(
-                self.n_layers * self.num_directions, batch_size, self.hidden_size))
+            hidden = torch.zeros(batch_size, self.hidden_size)
         elif strategy == cfg.inits.xavier:
-            hidden = torch.zeros(
-                self.n_layers * self.num_directions, batch_size, self.hidden_size)
+            hidden = torch.zeros(batch_size, self.hidden_size)
             hidden = Variable(torch.nn.init.xavier_normal(hidden))
         hidden = hidden.to(cfg.device)
         return hidden

@@ -2,11 +2,14 @@ import torch
 
 USE_CUDA = True
 
-device = 'cuda' if torch.cuda.is_available() and USE_CUDA else 'cpu'
+_uc = torch.cuda.is_available() and USE_CUDA
+if USE_CUDA and not _uc:
+    print('Cannot use cuda, it is unavailable. Resuming in CPU mode...')
+device = 'cuda' if _uc else 'cpu'
 
 
-clip = 2.0
-batch_size = 128
+# clip = 2.0
+# batch_size = 128
 
 
 class vocab:
@@ -31,10 +34,10 @@ LOGDIR = 'logs'
 NAME = 'logs/300_10k_2l_bidir_adam'
 
 LOSSDIR = 'losses.txt'  # for our purposes (o rly?)
-n_epochs = 10
-learning_rate = 0.0005
+# n_epochs = 10
+# learning_rate = 0.0005
 
-max_length = 100
+# max_length = 100
 
 data_instances = -1
 

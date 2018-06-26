@@ -1,3 +1,4 @@
+import argparse
 import pickle
 import time
 
@@ -5,34 +6,47 @@ import torch
 import torchtext
 from tensorboardX import SummaryWriter
 from torch import optim, nn
-from torch.autograd import Variable
 from torch.utils.data.dataloader import DataLoader
 
 import cfg
+import opts
 from dataset import LMDataset, Vocab
 from modules.generator import Generator
 from trainer import Trainer
 from utils import time_since
 
+# Instantiate parser
+parser = argparse.ArgumentParser(description='main.py')
+opts.model_opts(parser)
+opts.training_opts(parser)
+opts.model_io_opts(parser)
+opts.data_opts(parser)
+
+opt = parser.parse_args()
+print('Arguments parser')
+print(opt)
+
+# Initialize all except model
 # vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
-vocab = pickle.load(open('vocab.pt', 'rb'))
-corpus = pickle.load(open('data.pt', 'rb'))
+vocab = pickle.load(open(opt.vocab_path, 'rb'))
+corpus = pickle.load(open(opt.data_path, 'r'))
 lmdataset = LMDataset(vocab=vocab, data=corpus)
-qaloader = DataLoader(lmdataset, batch_size=cfg.batch_size, shuffle=False)
+qaloader = DataLoader(lmdataset, batch_size=opt.batch_size, shuffle=False)
 
-writer = SummaryWriter(log_dir=cfg.LOGDIR)
+if opt.tensorboard:
+    writer = SummaryWriter(log_dir=opt.log_file_path)
 
 
-# Initialize models (or load them from disk)
-if cfg.NEED_LOAD:
-    generator = torch.load(cfg.ENC_DUMP_PATH)
+# Initialize model
+if opt.checkpoint:
+    generator = torch.load(opt.checkpoint)
     # decoder = torch.load(cfg.DEC_DUMP_PATH)
     print('Successfully loaded from disk')
 else:
     generator = Generator(
-        cfg.model.vocab_size if cfg.model.vocab_size > 0 else len(vocab.d),
-        cfg.model.embedding_size,
-        cfg.model.hidden_size,
+        opt.vocab_size if cfg.model.vocab_size > 0 else len(vocab.d),
+        opt.embedding_size,
+        opt.hidden_size,
     )
     print('Initialized new models')
 
@@ -41,7 +55,7 @@ generator.to(cfg.device)
 
 # Initialize optimizers and criterion
 
-generator_optimizer = optim.Adam(generator.parameters(), lr=cfg.learning_rate)
+generator_optimizer = optim.Adam(generator.parameters(), lr=opt.learning_rate)
 # decoder_optimizer = optim.Adam(model.decoder.parameters(), lr=learning_rate)
 
 
@@ -60,7 +74,7 @@ def main(n_instances=None):
     print_loss_total = 0  # Reset every print_every
     plot_loss_total = 0  # Reset every plot_every
 
-    for epoch in range(1, cfg.n_epochs + 1):
+    for epoch in range(1, opt.n_epochs + 1):
         for idx, batch in enumerate(qaloader):
             # print(idx)
             # Get training data for this cycle
@@ -93,9 +107,9 @@ def main(n_instances=None):
                 print_loss_avg = print_loss_total / print_every
                 print_loss_total = 0
                 print_summary = '%s (%d %d%%) %.4f' % (
-                    time_since(start, epoch / cfg.n_epochs),
+                    time_since(start, epoch / opt.n_epochs),
                     epoch,
-                    epoch / cfg.n_epochs * 100,
+                    epoch / opt.n_epochs * 100,
                     print_loss_avg
                 )
                 print(print_summary)
@@ -103,10 +117,10 @@ def main(n_instances=None):
             if n_instances is not None:
                 if idx > n_instances:
                     break
-
-        with open(cfg.LOSSDIR, 'w') as f:
-            f.write(','.join(['{:5.2}' for i in losses]))
-            f.close()
+        if opt.tensorboard:
+            with open(cfg.LOSSDIR, 'w') as f:
+                f.write(','.join(['{:5.2}' for i in losses]))
+                f.close()
 
         if cfg.NEED_SAVE:
             if cfg.save == 'all':

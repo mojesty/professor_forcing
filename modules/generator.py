@@ -2,7 +2,6 @@ import cfg
 
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 
 import torch.nn.functional as F
 
@@ -96,19 +95,7 @@ class Generator(nn.Module):
             hidden = torch.zeros(batch_size, self.hidden_size)
         elif strategy == cfg.inits.xavier:
             hidden = torch.zeros(batch_size, self.hidden_size)
-            hidden = Variable(torch.nn.init.xavier_normal(hidden))
+            hidden = torch.nn.init.xavier_normal_(hidden)
         hidden = hidden.to(cfg.device)
         return hidden
 
-
-if __name__ == '__main__':
-    encoder_test = Generator(
-        vocab_size=31, hidden_size=10)
-    print(encoder_test)
-
-    encoder_hidden = encoder_test.init_hidden(batch_size=1).cpu()
-    # word_input = torch.LongTensor([1, 2, 3]).view(1, -1).to(cfg.device)
-    # if USE_CUDA:
-    #     encoder_test.cuda()
-    #     word_input = word_input.cuda()
-    encoder_outputs, encoder_hidden = encoder_test(word_input, encoder_hidden)

@@ -5,11 +5,8 @@ USE_CUDA = True
 device = 'cuda' if torch.cuda.is_available() and USE_CUDA else 'cpu'
 
 
-teacher_forcing_ratio = 1.0  # autoregressive training off
 clip = 2.0
-batch_size = 512
-
-MAX_LENGTH = 30
+batch_size = 128
 
 
 class vocab:
@@ -26,37 +23,31 @@ save = 'last'
 assert save in ['all', 'last', 'best']  # TODO: last and best
 
 # gonna format them later
-ENC_DUMP_PATH = 'models/encoder_{}_2layers_nhid_1024.binary'
+ENC_DUMP_PATH = 'test_generator05.pt'
 DEC_DUMP_PATH = 'models/decoder_{}_2layers_nhid_1024.binary'
 
-# Tensorboard configs
-# TODO: organize
+
 LOGDIR = 'logs'
 NAME = 'logs/300_10k_2l_bidir_adam'
 
 LOSSDIR = 'losses.txt'  # for our purposes (o rly?)
 n_epochs = 10
-
+learning_rate = 0.0005
 
 max_length = 100
 
+data_instances = -1
+
 
 class model:
-    dropout_p = 0.2
     vocab_size = -1
-    n_layers = 1
-    embedding_size = 30
-    hidden_size = 256
-    attn_model = 'general'
-
-    bidirectional = False
+    embedding_size = 32
+    hidden_size = 1024
 
 
 class sample_methods:
     argmax = 'argmax'
     multinomial = 'multinomial'
-
-teacher_forcing = True
 
 
 class inits:

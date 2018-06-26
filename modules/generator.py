@@ -44,47 +44,51 @@ class Generator(nn.Module):
 
         unnormalized_scores = self.linear(next_hidden)    # [batch_size x vocab_size]
 
-        scores = F.softmax(unnormalized_scores, dim=1)    # [batch_size x vocab_size]
-        return scores, next_hidden
+        # scores = F.softmax(unnormalized_scores, dim=1)    # [batch_size x vocab_size]
+        return unnormalized_scores, next_hidden
 
-    def consume(self, word_inputs, hidden, sampling, method=multinomial):
+    def consume(self, word_input, hidden, sampling, method=multinomial):
         # word_inputs                                       [batch_size x seq_len]
         # hidden                                            [batch_size x hidden_size]
         # store all hidden states for discriminator
-        hidden_states = []
-        seq_len, batch_size = word_inputs.size(1), word_inputs.size(0)
+        hidden_states = [hidden]
+        word_inputs = [word_input.data]
+        seq_len, batch_size = word_input.size(1), word_input.size(0)
         criterion = nn.CrossEntropyLoss()
         loss = 0
         if sampling:
             # autoregressive mode
             # we need only initial word inputs
-            current_word_inputs = word_inputs[:, 1].unsqueeze(1)
+            current_word_inputs = word_input[:, 1].unsqueeze(1)
             for idx in range(seq_len - 1):
                 scores, hidden = self(current_word_inputs, hidden)
-                loss += criterion(scores, word_inputs[:, idx+1])
+                loss += criterion(scores, word_input[:, idx + 1])
                 hidden_states.append(hidden)
                 current_word_inputs = self._sample(scores, method)
+                word_inputs.append(current_word_inputs.data)
 
         else:
             # teacher forcing mode
             for idx in range(seq_len - 1):
-                scores, hidden = self(word_inputs[:, idx].unsqueeze(1), hidden)
-                loss += criterion(scores, word_inputs[:, idx + 1])
+                scores, hidden = self(word_input[:, idx].unsqueeze(1), hidden)
+                loss += criterion(scores, word_input[:, idx + 1])
                 hidden_states.append(hidden)
 
+
         # we still can't go backward because we another losses are not computed
-        return loss, hidden_states
+        return loss, hidden_states, word_inputs
 
     def _sample(self, scores, method):
         # scores                                            [batch_size x vocab_size]
         # method                                            cfg.sample_methods
+        scores = F.softmax(scores, dim=1)
         if method == 'argmax':
             # find elements with max values for each score list in the minibatch
             topv, topi = scores.data.topk(1, dim=1)       # [batch_size x 1]
         elif method == 'multinomial':
             _scores = scores.cpu().exp().data
             topi = torch.multinomial(_scores, 1)          # [batch_size x 1]
-        topi.to(cfg.device)
+        topi = topi.to(cfg.device)
         return topi
 
     def init_hidden(self, batch_size, strategy=cfg.inits.xavier):
@@ -103,7 +107,7 @@ if __name__ == '__main__':
     print(encoder_test)
 
     encoder_hidden = encoder_test.init_hidden(batch_size=1).cpu()
-    word_input = torch.LongTensor([1, 2, 3]).view(1, -1).to(cfg.device)
+    # word_input = torch.LongTensor([1, 2, 3]).view(1, -1).to(cfg.device)
     # if USE_CUDA:
     #     encoder_test.cuda()
     #     word_input = word_input.cuda()

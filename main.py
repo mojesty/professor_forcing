@@ -40,8 +40,8 @@ generator.to(cfg.device)
 
 
 # Initialize optimizers and criterion
-learning_rate = 0.0001
-generator_optimizer = optim.Adam(generator.parameters(), lr=learning_rate)
+
+generator_optimizer = optim.Adam(generator.parameters(), lr=cfg.learning_rate)
 # decoder_optimizer = optim.Adam(model.decoder.parameters(), lr=learning_rate)
 
 

@@ -1,9 +1,7 @@
 import torch
 from torch.utils.data.dataset import Dataset
 
-from cfg import device
-
-
+from cfg import device, data_instances
 
 
 class LMDataset(Dataset):
@@ -23,7 +21,7 @@ class LMDataset(Dataset):
         return self.indexes_from_sentence(self.data[idx])
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) if data_instances < 0 else data_instances
 
 
 class Vocab:

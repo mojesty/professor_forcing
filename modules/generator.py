@@ -7,13 +7,15 @@ import torch.nn.functional as F
 
 multinomial = cfg.sample_methods.multinomial
 
+
 class Generator(nn.Module):
     def __init__(
-            self, vocab_size, embedding_size, hidden_size
+            self, vocab_size, embedding_size, hidden_size, device=None
     ):
         # input size means embedding size as usual
         super(Generator, self).__init__()
 
+        self.device = device
         self.input_size = vocab_size
         self.hidden_size = hidden_size
 
@@ -43,10 +45,10 @@ class Generator(nn.Module):
 
         unnormalized_scores = self.linear(next_hidden)    # [batch_size x vocab_size]
 
-        # scores = F.softmax(unnormalized_scores, dim=1)    # [batch_size x vocab_size]
+        # scores = F.softmax(unnormalized_scores, dim=1)  # [batch_size x vocab_size]
         return unnormalized_scores, next_hidden
 
-    def consume(self, word_input, hidden, sampling, method=multinomial):
+    def consume(self, word_input, hidden, sampling, method=multinomial, temperature=3):
         # word_inputs                                       [batch_size x seq_len]
         # hidden                                            [batch_size x hidden_size]
         # store all hidden states for discriminator
@@ -63,7 +65,7 @@ class Generator(nn.Module):
                 scores, hidden = self(current_word_inputs, hidden)
                 loss += criterion(scores, word_input[:, idx + 1])
                 hidden_states.append(hidden)
-                current_word_inputs = self._sample(scores, method)
+                current_word_inputs = self._sample(scores, method, temperature)
                 word_inputs.append(current_word_inputs.data)
 
         else:
@@ -73,11 +75,10 @@ class Generator(nn.Module):
                 loss += criterion(scores, word_input[:, idx + 1])
                 hidden_states.append(hidden)
 
-
         # we still can't go backward because we another losses are not computed
         return loss, hidden_states, word_inputs
 
-    def _sample(self, scores, method):
+    def _sample(self, scores, method, temperature):
         # scores                                            [batch_size x vocab_size]
         # method                                            cfg.sample_methods
         scores = F.softmax(scores, dim=1)
@@ -85,9 +86,9 @@ class Generator(nn.Module):
             # find elements with max values for each score list in the minibatch
             topv, topi = scores.data.topk(1, dim=1)       # [batch_size x 1]
         elif method == 'multinomial':
-            _scores = scores.cpu().exp().data
+            _scores = scores.cpu().div(temperature).exp().data
             topi = torch.multinomial(_scores, 1)          # [batch_size x 1]
-        topi = topi.to(cfg.device)
+        topi = topi.to(self.device)
         return topi
 
     def init_hidden(self, batch_size, strategy=cfg.inits.xavier):
@@ -96,6 +97,6 @@ class Generator(nn.Module):
         elif strategy == cfg.inits.xavier:
             hidden = torch.zeros(batch_size, self.hidden_size)
             hidden = torch.nn.init.xavier_normal_(hidden)
-        hidden = hidden.to(cfg.device)
+        hidden = hidden.to(self.device)
         return hidden
 

@@ -5,7 +5,8 @@ import cfg
 
 
 class Trainer:
-    def train(self, input, model, generator_optimizer, decoder_optimizer, criterion):
+    def train(self, opt, input, model, generator_optimizer,
+              temperature, decoder_optimizer, criterion):
         batch_size = input.size(0)
 
         # Zero gradients of both optimizers
@@ -17,7 +18,7 @@ class Trainer:
 
         # Backpropagation
         loss.backward()
-        torch.nn.utils.clip_grad_norm(model.parameters(), cfg.clip)
+        torch.nn.utils.clip_grad_norm(model.parameters(), opt.clip)
         generator_optimizer.step()
         # decoder_optimizer.step()
 

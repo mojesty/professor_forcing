@@ -14,7 +14,7 @@ from model import Translator
 
 vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
 final_data = pickle.load(open('/home/phobos_aijun/pytorch-experiments/DrQA/qa_final_data.pickle', 'rb'))
-qadataset = LMDataset(vocab=vocab, data=final_data, gpu=USE_CUDA)
+qadataset = LMDataset(vocab_path=vocab, data=final_data, gpu=USE_CUDA)
 qaloader = DataLoader(qadataset, batch_size=1, shuffle=False)
 
 

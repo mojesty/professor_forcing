@@ -1,11 +1,12 @@
 import argparse
 import pickle
 import time
+import logging
 
 import torch
 import torchtext
 from tensorboardX import SummaryWriter
-from torch import optim, nn
+from torch import optim
 from torch.utils.data.dataloader import DataLoader
 
 import cfg
@@ -21,17 +22,39 @@ opts.model_opts(parser)
 opts.training_opts(parser)
 opts.model_io_opts(parser)
 opts.data_opts(parser)
-
 opt = parser.parse_args()
-print('Arguments parser')
+
+print('Arguments:')
 print(opt)
+
+# check cuda
+if opt.cuda and not torch.cuda.is_available():
+    raise RuntimeError('Cannot train on GPU because cuda is not available')
+
+device = 'cuda' if opt.cuda else 'cpu'
+torch.manual_seed(opt.seed)
+if opt.cuda:
+    torch.cuda.manual_seed(opt.seed)
+
+
+# prefix is added to model name and to tensorboard scalar name
+prefix = 'vocab_{}.emb_{}.hidden_{}.lr_{}'.format(
+    opt.vocab_size,
+    opt.embedding_size,
+    opt.hidden_size,
+    opt.learning_rate
+)
 
 # Initialize all except model
 # vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
-vocab = pickle.load(open(opt.vocab_path, 'rb'))
-corpus = pickle.load(open(opt.data_path, 'r'))
-lmdataset = LMDataset(vocab=vocab, data=corpus)
-qaloader = DataLoader(lmdataset, batch_size=opt.batch_size, shuffle=False)
+# vocab = pickle.load(open(opt.vocab_path, 'rb'))
+lmdataset = LMDataset(
+    vocab_path=opt.vocab_path,
+    corpus_path=opt.data_path,
+    bptt=opt.bptt,
+    device=device
+)
+lmloader = DataLoader(lmdataset, batch_size=opt.batch_size, shuffle=True)
 
 if opt.tensorboard:
     writer = SummaryWriter(log_dir=opt.log_file_path)
@@ -44,24 +67,21 @@ if opt.checkpoint:
     print('Successfully loaded from disk')
 else:
     generator = Generator(
-        opt.vocab_size if cfg.model.vocab_size > 0 else len(vocab.d),
+        lmdataset.vocab,
         opt.embedding_size,
         opt.hidden_size,
     )
     print('Initialized new models')
-
-generator.to(cfg.device)
-
+generator.device = device
+generator.to(device)
 
 # Initialize optimizers and criterion
-
 generator_optimizer = optim.Adam(generator.parameters(), lr=opt.learning_rate)
-# decoder_optimizer = optim.Adam(model.decoder.parameters(), lr=learning_rate)
 
 
 # Configuring training
-plot_every = 200
-print_every = 10
+plot_every = opt.plot_every
+print_every = opt.print_every
 
 # Begin!
 trainer = Trainer()
@@ -75,7 +95,7 @@ def main(n_instances=None):
     plot_loss_total = 0  # Reset every plot_every
 
     for epoch in range(1, opt.n_epochs + 1):
-        for idx, batch in enumerate(qaloader):
+        for idx, batch in enumerate(lmloader):
             # print(idx)
             # Get training data for this cycle
             training_pair = batch
@@ -83,19 +103,22 @@ def main(n_instances=None):
 
             # Run the train function
             loss = trainer.train(
+                opt,
                 input_variable,
                 generator,
                 generator_optimizer,
+                opt.temperature,
                 None,
                 None
             )
             if idx % print_every == 0:
                 losses.append(loss)
-            writer.add_scalar(
-                cfg.NAME,
-                loss,
-                (epoch - 1) * (len(lmdataset) if n_instances is None else n_instances) + idx
-            )
+            if opt.tensorboard:
+                writer.add_scalar(
+                    prefix,
+                    loss,
+                    (epoch - 1) * (len(lmdataset) if n_instances is None else n_instances) + idx
+                )
 
             # Keep track of loss
             print_loss_total += loss
@@ -112,24 +135,20 @@ def main(n_instances=None):
                     epoch / opt.n_epochs * 100,
                     print_loss_avg
                 )
-                print(print_summary)
+                logging.info(print_summary)
 
             if n_instances is not None:
                 if idx > n_instances:
                     break
-        if opt.tensorboard:
-            with open(cfg.LOSSDIR, 'w') as f:
-                f.write(','.join(['{:5.2}' for i in losses]))
-                f.close()
 
-        if cfg.NEED_SAVE:
-            if cfg.save == 'all':
-                pass
-            elif cfg.save == 'last':
-                epoch = 'last'  # we overwrite the iterable variable but it's okay
-            else:
-                raise NotImplementedError
-            torch.save(generator, cfg.ENC_DUMP_PATH.format(epoch))
+            # with open(cfg.LOSSDIR, 'w') as f:
+            #     f.write(','.join(['{:5.2}' for i in losses]))
+            #     f.close()
+
+        if not opt.not_save:
+            # add epoch and loss info
+            fname = opt.path + '.' + prefix + '.epoch{:2}'.format(epoch) + '.loss{:5.2}'.format(loss)
+            torch.save(generator, fname)
 
     writer.close()
 

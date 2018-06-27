@@ -23,7 +23,7 @@ class LMGan(nn.Module):
             opt.d_linear_size,
             opt.d_dropout,
             opt.device
-        )
+        ) if opt.adversarial else None
 
     def forward(self, input, adversarial=True):
         batch_size = input.size(0)

@@ -1,5 +1,4 @@
 import argparse
-import pickle
 import time
 import logging
 from logging.config import dictConfig
@@ -7,17 +6,16 @@ from logging.config import dictConfig
 import torch
 import torchtext
 from tensorboardX import SummaryWriter
-from torch import optim
 from torch.utils.data.dataloader import DataLoader
 
 import cfg
 import opts
-from dataset import LMDataset, Vocab
-from modules.generator import Generator
+from dataset import LMDataset
+from model import LMGan
 from trainer import Trainer
 from utils import time_since
 
-# Instantiate parser
+# Instantiate parser and parse args
 parser = argparse.ArgumentParser(description='train.py')
 opts.model_opts(parser)
 opts.training_opts(parser)
@@ -69,25 +67,18 @@ if opt.checkpoint:
     # decoder = torch.load(cfg.DEC_DUMP_PATH)
     print('Successfully loaded from disk')
 else:
-    generator = Generator(
-        len(lmdataset.vocab),
-        opt.embedding_size,
-        opt.hidden_size,
-    )
+    model = LMGan(opt)
     print('Initialized new models')
 model.device = device
 model.to(device)
 
-# Initialize optimizers and criterion
-generator_optimizer = optim.Adam(model.generator.parameters(), lr=opt.learning_rate)
-discriminator_optimizer = optim.Adam(discriminator.parameters(), lr=opt.learning_rate)
 
 # Configuring training
 plot_every = opt.plot_every
 print_every = opt.print_every
 
 # Begin!
-trainer = Trainer()
+trainer = Trainer(opt, model)
 
 
 def main(n_instances=None):
@@ -99,21 +90,8 @@ def main(n_instances=None):
 
     for epoch in range(1, opt.n_epochs + 1):
         for idx, batch in enumerate(lmloader):
-            # print(idx)
-            # Get training data for this cycle
-            training_pair = batch
-            input_variable = training_pair
+            loss = trainer.train(opt, batch)
 
-            # Run the train function
-            loss = trainer.train(
-                opt,
-                input_variable,
-                generator,
-                generator_optimizer,
-                opt.temperature,
-                None,
-                None
-            )
             if idx % print_every == 0:
                 losses.append(loss)
             if opt.tensorboard:
@@ -150,8 +128,8 @@ def main(n_instances=None):
 
         if not opt.not_save:
             # add epoch and loss info
-            fname = opt.save_path + '.' + prefix + '.epoch{:2}'.format(epoch) + '.loss{:5.2}'.format(loss)
-            torch.save(generator, fname)
+            fname = opt.save_path + '.' + prefix + '.epoch{:2}'.format(epoch) + '.loss{:4.1}.pt'.format(loss)
+            torch.save(model, fname)
 
     writer.close()
 

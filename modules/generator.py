@@ -48,13 +48,15 @@ class Generator(nn.Module):
         # scores = F.softmax(unnormalized_scores, dim=1)  # [batch_size x vocab_size]
         return unnormalized_scores, next_hidden
 
-    def consume(self, word_input, hidden, sampling, method=multinomial, temperature=3):
+    def consume(self, word_input, hidden, sampling,
+                method=multinomial, temperature=3, n_sampled=None):
         # word_inputs                                       [batch_size x seq_len]
         # hidden                                            [batch_size x hidden_size]
         # store all hidden states for discriminator
         hidden_states = [hidden]
         word_inputs = [word_input.data]
         seq_len, batch_size = word_input.size(1), word_input.size(0)
+        if n_sampled: seq_len = n_sampled
         criterion = nn.CrossEntropyLoss()
         loss = 0
         if sampling:
@@ -63,7 +65,7 @@ class Generator(nn.Module):
             current_word_inputs = word_input[:, 1].unsqueeze(1)
             for idx in range(seq_len - 1):
                 scores, hidden = self(current_word_inputs, hidden)
-                loss += criterion(scores, word_input[:, idx + 1])
+                if not n_sampled: loss += criterion(scores, word_input[:, idx + 1])
                 hidden_states.append(hidden)
                 current_word_inputs = self._sample(scores, method, temperature)
                 word_inputs.append(current_word_inputs.data)

@@ -17,7 +17,7 @@ class Sampler:
         self.dataset = dataset
 
     def sample(self, batch_size=1, input=None, start_hidden=None,
-               strategy=multinomial, temperature=3.0):
+               strategy=multinomial, temperature=3.0, n_sampled=100):
         """
         Main sampling function.
         :param batch_size:
@@ -31,7 +31,7 @@ class Sampler:
         input = input or self.input(batch_size)
         _, hidden_states, words_indices = self.model.consume(
             input, start_hidden, sampling=True, method=strategy,
-            temperature=temperature)
+            temperature=temperature, n_sampled=n_sampled)
 
         words_indices = torch.stack(words_indices[1:], dim=1).cpu()
 
@@ -40,8 +40,8 @@ class Sampler:
             print(''.join(tokens))
 
     def input(self, batch_size):
-        l = [0] * len(self.dataset.vocab.d)
-        l[10] = 1
+        l = [0] * len(self.dataset.vocab)
+        l[20] = 1
         return torch.LongTensor(l).to(device).repeat((batch_size, 1))
 
 if __name__ == '__main__':
@@ -57,12 +57,13 @@ if __name__ == '__main__':
 
     device = 'cuda' if opt.cuda else 'cpu'
     model = torch.load(opt.checkpoint)
+    model.device = device
     model.to(device)
 
     lmdataset = LMDataset(
         vocab_path=opt.vocab_path,
         corpus_path=opt.data_path,
-        bptt=opt.bptt,
+        bptt=opt.length,
         device=device
     )
     sampler = Sampler(model, lmdataset)
@@ -70,5 +71,6 @@ if __name__ == '__main__':
     sampler.sample(
         opt.batch_size,
         strategy=opt.sampling_strategy,
-        temperature=opt.temperature
+        temperature=opt.temperature,
+        n_sampled=opt.length
     )

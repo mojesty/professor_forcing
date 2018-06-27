@@ -147,7 +147,7 @@ def main(n_instances=None):
 
         if not opt.not_save:
             # add epoch and loss info
-            fname = opt.path + '.' + prefix + '.epoch{:2}'.format(epoch) + '.loss{:5.2}'.format(loss)
+            fname = opt.save_path + '.' + prefix + '.epoch{:2}'.format(epoch) + '.loss{:5.2}'.format(loss)
             torch.save(generator, fname)
 
     writer.close()

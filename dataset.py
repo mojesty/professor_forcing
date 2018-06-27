@@ -16,6 +16,8 @@ class LMDataset(Dataset):
         self.device = device
         self.vocab = Vocab(corpus_path) if not vocab_path\
             else pickle.load(open(vocab_path, 'rb'))
+        if not vocab_path:
+            pickle.dump(self.vocab, open('vocab.pt', 'wb'))
         # TODO: laze dataset
         _data = []
         with open(corpus_path, 'r') as f:

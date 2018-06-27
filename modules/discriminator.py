@@ -26,7 +26,7 @@ class Discriminator(nn.Module):
             nn.Linear(linear_size, linear_size),
             nn.ReLU(),
             nn.Dropout(lin_dropout),
-            nn.Linear(linear_size, 2)
+            nn.Linear(linear_size, 1)
         )
 
     def forward(self, hidden_states):
@@ -34,8 +34,8 @@ class Discriminator(nn.Module):
         initial_hidden = self.init_hidden(hidden_states.size(0))
         _, rnn_final_hidden = self.rnn(
             hidden_states, initial_hidden)                   # [batch_size * hid_size * 2]
-        unnormalized_scores = self.linears(rnn_final_hidden) # [batch_size * 2]
-        scores = F.softmax(unnormalized_scores, dim=1)       # [batch_size * 2]
+        unnormalized_scores = self.linears(rnn_final_hidden) # [batch_size * 1]
+        scores = F.softmax(unnormalized_scores, dim=1)       # [batch_size * 1]
         return scores
 
     def init_hidden(self, batch_size):

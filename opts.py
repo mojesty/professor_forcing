@@ -44,6 +44,8 @@ def training_opts(parser):
     group = parser.add_argument_group('Training')
     group.add_argument('-adversarial', action='store_true',
                        help='Use Professor Forcing or vanilla NLL')
+    group.add_argument('-optional_loss', action='store_true',
+                       help='Optional loss for generator')
     group.add_argument('-batch_size', type=int, default=128,
                        help='Batch size')
     group.add_argument('-bptt', type=int, default=200,

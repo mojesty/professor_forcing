@@ -33,7 +33,7 @@ class LMGan(nn.Module):
 
             loss, gen_hidden_states, _ = self.generator.consume(input, start_hidden, sampling=False)
 
-            return loss
+            return loss, None, None
         else:
             # run one pass without sampling
             start_hidden_nll = self.generator.init_hidden(batch_size, strategy=cfg.inits.zeros)

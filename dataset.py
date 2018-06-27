@@ -25,6 +25,7 @@ class LMDataset(Dataset):
                 _data.append(line[:-1])  # remove possible \n
             f.close()
         _data = ''.join(_data)
+        _data = _data[:(len(_data) // bptt) * bptt]
         # split data with chunks of lengths bptt to use them further
         # in the __getitem__
         self.data = [_data[i:i + bptt]

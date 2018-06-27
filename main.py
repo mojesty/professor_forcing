@@ -2,6 +2,7 @@ import argparse
 import pickle
 import time
 import logging
+from logging.config import dictConfig
 
 import torch
 import torchtext
@@ -24,6 +25,7 @@ opts.model_io_opts(parser)
 opts.data_opts(parser)
 opt = parser.parse_args()
 
+dictConfig(cfg.logging_cfg)
 print('Arguments:')
 print(opt)
 
@@ -37,14 +39,6 @@ if opt.cuda:
     torch.cuda.manual_seed(opt.seed)
 
 
-# prefix is added to model name and to tensorboard scalar name
-prefix = 'vocab_{}.emb_{}.hidden_{}.lr_{}'.format(
-    opt.vocab_size,
-    opt.embedding_size,
-    opt.hidden_size,
-    opt.learning_rate
-)
-
 # Initialize all except model
 # vocab = torchtext.vocab.GloVe(name='840B', dim='300', cache='/media/data/nlp/wv/glove')
 # vocab = pickle.load(open(opt.vocab_path, 'rb'))
@@ -55,6 +49,15 @@ lmdataset = LMDataset(
     device=device
 )
 lmloader = DataLoader(lmdataset, batch_size=opt.batch_size, shuffle=True)
+
+# prefix is added to model name and to tensorboard scalar name
+prefix = 'vocab_{}.emb_{}.hidden_{}.lr_{}'.format(
+    # TODO: word-level vocab problem
+    len(lmdataset.vocab),
+    opt.embedding_size,
+    opt.hidden_size,
+    opt.learning_rate
+)
 
 if opt.tensorboard:
     writer = SummaryWriter(log_dir=opt.log_file_path)
@@ -67,7 +70,7 @@ if opt.checkpoint:
     print('Successfully loaded from disk')
 else:
     generator = Generator(
-        lmdataset.vocab,
+        len(lmdataset.vocab),
         opt.embedding_size,
         opt.hidden_size,
     )

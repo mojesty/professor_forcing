@@ -41,7 +41,7 @@ def training_opts(parser):
                        help='How many steps to backpropagate')
     group.add_argument('-learning_rate', type=float, default=0.0005,
                        help='Learning rate')
-    group.add_argument('-clip_grad', type=float, default=2.0,
+    group.add_argument('-clip', type=float, default=2.0,
                        help='Clip gradients if their l2 norm above threshold')
     group.add_argument('-n_epochs', type=int, default=20,
                        help='Total trainiтg epochs')

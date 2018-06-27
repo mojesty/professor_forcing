@@ -18,7 +18,7 @@ from trainer import Trainer
 from utils import time_since
 
 # Instantiate parser
-parser = argparse.ArgumentParser(description='main.py')
+parser = argparse.ArgumentParser(description='train.py')
 opts.model_opts(parser)
 opts.training_opts(parser)
 opts.model_io_opts(parser)
@@ -65,7 +65,7 @@ if opt.tensorboard:
 
 # Initialize model
 if opt.checkpoint:
-    generator = torch.load(opt.checkpoint)
+    model = torch.load(opt.checkpoint)
     # decoder = torch.load(cfg.DEC_DUMP_PATH)
     print('Successfully loaded from disk')
 else:
@@ -75,12 +75,12 @@ else:
         opt.hidden_size,
     )
     print('Initialized new models')
-generator.device = device
-generator.to(device)
+model.device = device
+model.to(device)
 
 # Initialize optimizers and criterion
-generator_optimizer = optim.Adam(generator.parameters(), lr=opt.learning_rate)
-
+generator_optimizer = optim.Adam(model.generator.parameters(), lr=opt.learning_rate)
+discriminator_optimizer = optim.Adam(discriminator.parameters(), lr=opt.learning_rate)
 
 # Configuring training
 plot_every = opt.plot_every

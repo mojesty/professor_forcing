@@ -18,7 +18,7 @@ class Trainer:
 
         # Backpropagation
         loss.backward()
-        torch.nn.utils.clip_grad_norm(model.parameters(), opt.clip)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), opt.clip)
         generator_optimizer.step()
         # decoder_optimizer.step()
 

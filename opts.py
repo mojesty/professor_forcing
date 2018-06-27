@@ -26,6 +26,14 @@ def model_opts(parser):
                        help='Use GPU (error will be raised if it is unavailable')
     group.add_argument('-temperature', type=float, default=3.0,
                        help='Temperature (higher is less variant) for sampling')
+
+    group = parser.add_argument_group('Discriminator')
+    group.add_argument('-d_hidden', type=int, default=512,
+                       help='Hidden size of discriminator RNN')
+    group.add_argument('-d_linear_size', type=int, default=512,
+                       help='Size of linear layer ')
+    group.add_argument('-d_dropout', type=float, default=0.2,
+                       help='Dropout in dicriminator linear layers')
     # TODO: pretrained embeddings
 
 
@@ -34,7 +42,8 @@ def training_opts(parser):
     Options for training.
     """
     group = parser.add_argument_group('Training')
-
+    group.add_argument('-adversarial', action='store_true',
+                       help='Use Professor Forcing or vanilla NLL')
     group.add_argument('-batch_size', type=int, default=128,
                        help='Batch size')
     group.add_argument('-bptt', type=int, default=200,

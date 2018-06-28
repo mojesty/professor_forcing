@@ -12,10 +12,10 @@ class Trainer:
         if opt.adversarial:
             self.d_optim = optim.Adam(model.discriminator.parameters(), lr=opt.learning_rate)
 
-    def train(self, input, model):
+    def train(self, opt, input):
 
-        model.zero_grad()
-        nll_loss, tf_scores, ar_scores = model(input, adversarial=self.opt.adversarial)
+        self.model.zero_grad()
+        nll_loss, tf_scores, ar_scores = self.model(input, adversarial=self.opt.adversarial)
 
         # Backpropagation
         nll_loss.backward(retain_graph=True)
@@ -23,14 +23,14 @@ class Trainer:
             g_loss = self._calculate_generator_loss(tf_scores, ar_scores).sum()
             d_loss = self._calcualte_discriminator_loss(tf_scores, ar_scores).sum()
 
-            d_loss.backward()
+            d_loss.backward(retain_graph=True)
             g_loss.backward()
             g_loss_value = g_loss.item()
             d_loss_value = d_loss.item()
         else:
             g_loss_value = None
             d_loss_value = None
-        torch.nn.utils.clip_grad_norm_(model.parameters(), self.opt.clip)
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.opt.clip)
 
         self.g_optim.step() and (not self.opt.adversarial or self.d_optim.step())
 
@@ -47,8 +47,8 @@ class Trainer:
         loss = torch.log(ar_scores) * (-1)
 
         if self.opt.optional_loss:
-            optional_loss = torch.log(1 - tf_scores) * (-1)
-        return loss + optional_loss
+            loss += torch.log(1 - tf_scores) * (-1)
+        return loss
 
     def _calcualte_discriminator_loss(self, tf_scores, ar_scores):
         tf_loss = torch.log(tf_scores) * (-1)

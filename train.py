@@ -46,12 +46,14 @@ lmdataset = LMDataset(
     bptt=opt.bptt,
     device=device
 )
+opt.vocab_size = len(lmdataset.vocab)
+opt.device = device
 lmloader = DataLoader(lmdataset, batch_size=opt.batch_size, shuffle=True)
 
 # prefix is added to model name and to tensorboard scalar name
 prefix = 'vocab_{}.emb_{}.hidden_{}.lr_{}'.format(
     # TODO: word-level vocab problem
-    len(lmdataset.vocab),
+    opt.vocab_size,
     opt.embedding_size,
     opt.hidden_size,
     opt.learning_rate

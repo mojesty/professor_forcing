@@ -28,7 +28,7 @@ def model_opts(parser):
                        help='Temperature (higher is less variant) for sampling')
 
     group = parser.add_argument_group('Discriminator')
-    group.add_argument('-d_hidden', type=int, default=512,
+    group.add_argument('-d_hidden_size', type=int, default=512,
                        help='Hidden size of discriminator RNN')
     group.add_argument('-d_linear_size', type=int, default=512,
                        help='Size of linear layer ')

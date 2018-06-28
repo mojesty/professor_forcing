@@ -30,16 +30,16 @@ class Discriminator(nn.Module):
         )
 
     def forward(self, hidden_states):
-        # hidden_states                                      # [batch_size * seq_len * hid_size]
+        # hidden_states                                           # [batch_size * seq_len * hid_size]
+        batch_size = hidden_states.size(0)
         initial_hidden = self.init_hidden(hidden_states.size(0))
         _, rnn_final_hidden = self.rnn(
-            hidden_states, initial_hidden)                   # [batch_size * hid_size * 2]
-        unnormalized_scores = self.linears(rnn_final_hidden) # [batch_size * 1]
-        scores = F.softmax(unnormalized_scores, dim=1)       # [batch_size * 1]
+            hidden_states, initial_hidden)                        # [2 * batch_size * hid_size]
+        rnn_final_hidden = rnn_final_hidden.view(batch_size, -1)  # [batch_size * (2 * hidden_size)]
+        scores = self.linears(rnn_final_hidden)                   # [batch_size * 1]
+        # scores = F.softmax(unnormalized_scores, dim=1)          # [batch_size * 1]
         return scores
 
     def init_hidden(self, batch_size):
-        with torch.no_grad:
-            hidden = torch.zeros(batch_size, self.hidden_size * 2)
-        hidden = hidden.to(self.device)
+        hidden = torch.zeros(2, batch_size, self.hidden_size).to(self.device)
         return hidden

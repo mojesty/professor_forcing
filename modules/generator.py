@@ -78,6 +78,8 @@ class Generator(nn.Module):
                 hidden_states.append(hidden)
 
         # we still can't go backward because we another losses are not computed
+        hidden_states = torch.stack(hidden_states, dim=1)
+        # word_inputs = torch.stack(word_inputs, dim=1)
         return loss, hidden_states, word_inputs
 
     def _sample(self, scores, method, temperature):

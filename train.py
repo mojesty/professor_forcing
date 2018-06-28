@@ -4,8 +4,7 @@ import logging
 from logging.config import dictConfig
 
 import torch
-import torchtext
-from tensorboardX import SummaryWriter
+# import torchtext
 from torch.utils.data.dataloader import DataLoader
 
 import cfg
@@ -60,6 +59,7 @@ prefix = 'vocab_{}.emb_{}.hidden_{}.lr_{}'.format(
 )
 
 if opt.tensorboard:
+    from tensorboardX import SummaryWriter
     writer = SummaryWriter(log_dir=opt.log_file_path)
 
 

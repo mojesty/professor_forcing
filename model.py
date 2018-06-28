@@ -33,7 +33,7 @@ class LMGan(nn.Module):
 
             loss, gen_hidden_states, _ = self.generator.consume(input, start_hidden, sampling=False)
 
-            return loss, None, None
+            return loss, None, None, None, None
         else:
             # run one pass without sampling
             start_hidden_nll = self.generator.init_hidden(batch_size, strategy=cfg.inits.zeros)
@@ -56,5 +56,6 @@ class LMGan(nn.Module):
             teacher_forcing_scores = self.discriminator(gen_hidden_states_nll)
             autoregressive_scores = self.discriminator(gen_hidden_states_adv)
 
-            return loss_nll + loss_adv, teacher_forcing_scores, autoregressive_scores
+            return loss_nll + loss_adv, teacher_forcing_scores, autoregressive_scores,\
+        gen_hidden_states_nll, gen_hidden_states_adv
 

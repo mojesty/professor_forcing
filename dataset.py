@@ -88,7 +88,7 @@ class Vocab:
         return self.stoi(token)
 
     def __len__(self):
-        return len(
+        return 1 + len(
             [k for k, v in self.counts.items() if v >= self.min_counts]
         )
 

@@ -25,9 +25,9 @@ class Trainer:
         if self.opt.adversarial:
             g_loss = self._calculate_generator_loss(tf_scores, ar_scores).sum()
             d_loss = self._calcualte_discriminator_loss(tf_scores, ar_scores).sum()
-            if not update_g:
-                is_nll.detach()
-                is_adv.detach()
+            # if not update_g:
+            #     is_nll.detach_()
+            #     is_adv.detach_()
             d_loss.backward(retain_graph=True)
             g_loss.backward()
             g_loss_value = g_loss.item()

@@ -1,6 +1,7 @@
 import argparse
 import time
 import logging
+import datetime
 from logging.config import dictConfig
 
 import torch
@@ -43,30 +44,37 @@ lmdataset = LMDataset(
     vocab_path=opt.vocab_path,
     corpus_path=opt.data_path,
     bptt=opt.bptt,
-    device=device
+    device=device,
+    min_counts=opt.min_counts
 )
 opt.vocab_size = len(lmdataset.vocab)
 opt.device = device
 lmloader = DataLoader(lmdataset, batch_size=opt.batch_size, shuffle=True)
 
 # prefix is added to model name and to tensorboard scalar name
-prefix = 'vocab_{}.emb_{}.hidden_{}.lr_{}'.format(
-    # TODO: word-level vocab problem
+start_time = str(datetime.datetime.now()).replace(' ', '_').replace(':', '_')[:-10]
+prefix = 'vocab_{}.emb_{}.hidden_{}.lr_{}.start_time_{}'.format(
     opt.vocab_size,
     opt.embedding_size,
     opt.hidden_size,
-    opt.learning_rate
+    opt.learning_rate,
+    start_time
 )
 
 if opt.tensorboard:
     from tensorboardX import SummaryWriter
-    writer = SummaryWriter(log_dir=opt.log_file_path)
+    writer = SummaryWriter(log_dir=opt.log_file_dir)
 
 
 # Initialize model
 if opt.checkpoint:
     model = torch.load(opt.checkpoint)
-    # decoder = torch.load(cfg.DEC_DUMP_PATH)
+    if model.opt.vocab_size != opt.vocab_size:
+        raise RuntimeError("""
+        Size mismatch:
+        Checkpoint vocabulary size {:7}
+        Model vocabulary size {:7}
+        """)
     print('Successfully loaded from disk')
 else:
     model = LMGan(opt)
@@ -79,6 +87,7 @@ model.to(device)
 plot_every = opt.plot_every
 print_every = opt.print_every
 
+
 # Begin!
 trainer = Trainer(opt, model)
 
@@ -87,38 +96,50 @@ def main(n_instances=None):
     # Keep track of time elapsed and running averages
     start = time.time()
     losses = []
-    print_loss_total = 0  # Reset every print_every
+    print_nll_loss_total = 0  # Reset every print_every
+    print_g_loss_total = 0
+    print_d_loss_total = 0
     plot_loss_total = 0  # Reset every plot_every
 
     for epoch in range(1, opt.n_epochs + 1):
         for idx, batch in enumerate(lmloader):
-            loss = trainer.train(opt, batch)
+            nll_loss, gen_loss, disc_loss = trainer.train(opt, batch)
 
             if idx % print_every == 0:
-                losses.append(loss)
+                losses.append(nll_loss)
             if opt.tensorboard:
-                writer.add_scalar(
-                    prefix,
-                    loss,
-                    (epoch - 1) * (len(lmdataset) if n_instances is None else n_instances) + idx
-                )
-
+                step_no = (epoch - 1) * (len(lmdataset) if n_instances is None else n_instances) + idx
+                if opt.adversarial:
+                    tag_dict = {
+                        'nll_loss': nll_loss,
+                        'generator_loss': gen_loss,
+                        'discriminator_loss': disc_loss,
+                    }
+                else:
+                    tag_dict = {'nll_loss': nll_loss}
+                writer.add_scalars(prefix, tag_dict, step_no)
+                # writer.export_scalars_to_json()  # possibly not required
             # Keep track of loss
-            print_loss_total += loss
-            plot_loss_total += loss
+            print_nll_loss_total += nll_loss
+            print_g_loss_total += gen_loss
+            print_d_loss_total += disc_loss
+            plot_loss_total += nll_loss
 
             if epoch == 0: continue
 
             if idx % print_every == 0:
-                print_loss_avg = print_loss_total / print_every
-                print_loss_total = 0
-                print_summary = '%s (%d %d%%) %.4f' % (
+                print_summary = '%s (%d %d%%) nll %.4f generator %.4f discriminator %.4f' % (
                     time_since(start, epoch / opt.n_epochs),
                     epoch,
                     epoch / opt.n_epochs * 100,
-                    print_loss_avg
+                    print_nll_loss_total / print_every,
+                    print_g_loss_total / print_every,
+                    print_d_loss_total / print_every,
                 )
                 logging.info(print_summary)
+                print_nll_loss_total = 0
+                print_g_loss_total = 0
+                print_d_loss_total = 0
 
             if n_instances is not None:
                 if idx > n_instances:
@@ -130,7 +151,7 @@ def main(n_instances=None):
 
         if not opt.not_save:
             # add epoch and loss info
-            fname = opt.save_path + '.' + prefix + '.epoch{:2}'.format(epoch) + '.loss{:4.1}.pt'.format(loss)
+            fname = opt.save_path + '.' + prefix + '.epoch{:2}'.format(epoch) + '.loss{:4.1}.pt'.format(nll_loss)
             torch.save(model, fname)
 
     writer.close()

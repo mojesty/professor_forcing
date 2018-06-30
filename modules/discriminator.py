@@ -37,7 +37,7 @@ class Discriminator(nn.Module):
             hidden_states, initial_hidden)                        # [2 * batch_size * hid_size]
         rnn_final_hidden = rnn_final_hidden.view(batch_size, -1)  # [batch_size * (2 * hidden_size)]
         scores = self.linears(rnn_final_hidden)                   # [batch_size * 1]
-        # scores = F.softmax(unnormalized_scores, dim=1)          # [batch_size * 1]
+        scores = F.sigmoid(scores)          # [batch_size * 1]
         return scores
 
     def init_hidden(self, batch_size):

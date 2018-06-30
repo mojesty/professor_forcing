@@ -64,7 +64,8 @@ if __name__ == '__main__':
         vocab_path=opt.vocab_path,
         corpus_path=opt.data_path,
         bptt=opt.length,
-        device=device
+        device=device,
+        min_counts=0  # TODO: make sure it works
     )
     sampler = Sampler(model, lmdataset)
 

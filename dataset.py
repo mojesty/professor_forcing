@@ -3,7 +3,9 @@ import pickle
 import torch
 from torch.utils.data.dataset import Dataset
 
-from cfg import data_instances
+from cfg import data_instances, vocab
+
+unk = vocab.unk
 
 
 class LMDataset(Dataset):
@@ -11,20 +13,24 @@ class LMDataset(Dataset):
     Simple LM Dataset. Refers to vocab for indexing.
     """
 
-    def __init__(self, corpus_path, vocab_path, bptt, device):
+    def __init__(self, corpus_path, vocab_path,
+                 bptt, device, min_counts):
         self.seq_lengths = bptt
         self.device = device
-        self.vocab = Vocab(corpus_path) if not vocab_path\
+        # set up vocab
+        self.vocab = Vocab(corpus_path, min_counts) if not vocab_path\
             else pickle.load(open(vocab_path, 'rb'))
+        self.vocab.min_counts = min_counts
         if not vocab_path:
             pickle.dump(self.vocab, open('vocab.pt', 'wb'))
-        # TODO: laze dataset
+
         _data = []
         with open(corpus_path, 'r') as f:
             for line in f:
                 _data.append(line[:-1])  # remove possible \n
             f.close()
         _data = ''.join(_data)
+        # truncate data to make even splits
         _data = _data[:(len(_data) // bptt) * bptt]
         # split data with chunks of lengths bptt to use them further
         # in the __getitem__
@@ -45,7 +51,7 @@ class LMDataset(Dataset):
 
 class Vocab:
 
-    def __init__(self, corpus_path, min_counts=0):
+    def __init__(self, corpus_path, min_counts):
         # online counting for memory efficiency
         self.counts = {}
         print('Building vocabulary...')
@@ -57,26 +63,33 @@ class Vocab:
             f.close()
 
         # build vocabularies
-        self.vocab = {}
-        _c = 0
+        self.vocab = {unk: 0}
         for k, v in self.counts.items():
-            if v >= min_counts:
-                self.vocab[k] = _c
-                _c += 1
+            self.vocab[k] = len(self.vocab)
         self.vocab_ = {v: k for k, v in self.vocab.items()}
+        self.min_counts = min_counts
         print('Vocabulary built')
 
     def itos(self, idx):
-        return self.vocab_[idx]
+        cand = self.vocab_[idx]
+        if self.counts[cand] >= self.min_counts:
+            return cand
+        else:
+            return unk
 
-    def stoi(self, char):
-        return self.vocab[char]
+    def stoi(self, token):
+        if self.counts[token] >= self.min_counts:
+            return self.vocab[token]
+        else:
+            return self.vocab[unk]
 
     def __getitem__(self, token):
         # TODO: fix it
-        return self.vocab.get(token, 'UNK')
+        return self.stoi(token)
 
     def __len__(self):
-        return len(self.vocab)
+        return len(
+            [k for k, v in self.counts.items() if v >= self.min_counts]
+        )
 
 

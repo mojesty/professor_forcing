@@ -17,6 +17,8 @@ https://arxiv.org/pdf/1610.09038.pdf
 ## Preprocessing
 No special preprocessing is required, 
 just create a file with tokens separated by space.
+In the original paper, the car-level language modelling is used, so in this case
+you should create a single file with content like 'h e l l o _ w o r l d !'
 
 ## Training
 `python train.py`

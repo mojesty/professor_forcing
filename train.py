@@ -49,7 +49,7 @@ lmdataset = LMDataset(
 )
 opt.vocab_size = len(lmdataset.vocab)
 opt.device = device
-lmloader = DataLoader(lmdataset, batch_size=opt.batch_size, shuffle=True)
+lmloader = DataLoader(lmdataset, batch_size=opt.batch_size, shuffle=False)
 
 # prefix is added to model name and to tensorboard scalar name
 start_time = str(datetime.datetime.now()).replace(' ', '_').replace(':', '_')[:-10]
@@ -108,7 +108,7 @@ def main(n_instances=None):
             if idx % print_every == 0:
                 losses.append(nll_loss)
             if opt.tensorboard:
-                step_no = (epoch - 1) * (len(lmdataset) if n_instances is None else n_instances) + idx
+                step_no = (epoch - 1) * (len(lmdataset) // opt.batch_size if n_instances is None else n_instances) + idx
                 if opt.adversarial:
                     tag_dict = {
                         'nll_loss': nll_loss,
@@ -118,12 +118,16 @@ def main(n_instances=None):
                 else:
                     tag_dict = {'nll_loss': nll_loss}
                 writer.add_scalars(prefix, tag_dict, step_no)
+                if opt.plot_grad_norms:
+                    norms_dict = model.view_rnn_grad_norms()
+                    writer.add_scalars(prefix + 'norms', norms_dict, step_no)
                 # writer.export_scalars_to_json()  # possibly not required
             # Keep track of loss
             print_nll_loss_total += nll_loss
-            print_g_loss_total += gen_loss
-            print_d_loss_total += disc_loss
-            plot_loss_total += nll_loss
+            if opt.adversarial:
+                print_g_loss_total += gen_loss
+                print_d_loss_total += disc_loss
+                plot_loss_total += nll_loss
 
             if epoch == 0: continue
 
@@ -153,8 +157,8 @@ def main(n_instances=None):
             # add epoch and loss info
             fname = opt.save_path + '.' + prefix + '.epoch{:2}'.format(epoch) + '.loss{:4.1}.pt'.format(nll_loss)
             torch.save(model, fname)
-
-    writer.close()
+    if opt.tensorboard:
+        writer.close()
 
 if __name__ == '__main__':
-    main()
+    main(n_instances=opt.n_instances)

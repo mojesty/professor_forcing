@@ -50,7 +50,7 @@ def training_opts(parser):
                        help='Batch size')
     group.add_argument('-bptt', type=int, default=200,
                        help='How many steps to backpropagate')
-    group.add_argument('-learning_rate', type=float, default=0.0005,
+    group.add_argument('-learning_rate', type=float, default=0.001,
                        help='Learning rate')
     group.add_argument('-clip', type=float, default=2.0,
                        help='Clip gradients if their l2 norm above threshold')
@@ -66,8 +66,12 @@ def training_opts(parser):
                        help="""
                        Path to tensorboard log directory (the file name)
                        will be consistent with the checkpoint name""")
+    group.add_argument('-plot_grad_norms', action='store_true',
+                       help='plot min and max rnn grad norms in TB')
     group.add_argument('-plot_every', type=int, default=200,
                        help='Add data every N batches')
+    group.add_argument('-n_instances', type=int, default=None,
+                       help='Useful for debug')
 
 
 def model_io_opts(parser):

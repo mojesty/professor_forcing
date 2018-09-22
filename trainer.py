@@ -19,10 +19,10 @@ class Trainer:
         # is too poor
         nll_loss, tf_scores, ar_scores, is_nll, is_adv = self.model(
             input, adversarial=self.opt.adversarial)
-        update_g, update_d = self._need_update(tf_scores, ar_scores)
         # Backpropagation
         nll_loss.backward(retain_graph=True)
         if self.opt.adversarial:
+            update_g, update_d = self._need_update(tf_scores, ar_scores)
             g_loss = self._calculate_generator_loss(tf_scores, ar_scores).sum()
             d_loss = self._calcualte_discriminator_loss(tf_scores, ar_scores).sum()
             if not update_g:

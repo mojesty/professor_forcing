@@ -59,3 +59,11 @@ class LMGan(nn.Module):
             return loss_nll + loss_adv, teacher_forcing_scores, autoregressive_scores,\
         gen_hidden_states_nll, gen_hidden_states_adv
 
+    def view_rnn_grad_norms(self):
+        norms_dict = {
+            k: v.grad.norm().item()
+            for k, v in self.named_parameters()
+            if 'rnn' in k
+        }
+        return norms_dict
+

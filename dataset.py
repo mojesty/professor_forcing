@@ -16,6 +16,7 @@ class LMDataset(Dataset):
     def __init__(self, corpus_path, vocab_path,
                  bptt, device, min_counts):
         self.seq_lengths = bptt
+        bptt *= 2
         self.device = device
         # set up vocab
         self.vocab = Vocab(corpus_path, min_counts) if not vocab_path\
